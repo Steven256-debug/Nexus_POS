@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  role       String   @default("EMPLOYEE")
+  createdAt  DateTime @default(now())
+  
+  sales      Sale[]
+  
+  @@map("users")
+}
+
+model Product {
+  id             String            @id @default(uuid())
+  name           String
+  sku            String            @unique
+  category       String
+  pricePerUnit   Float             @map("price_per_unit")
+  stockQuantity  Int               @map("stock_quantity")
+  minStockAlert  Int               @map("min_stock_alert")
+  imageUrl       String?           @map("image_url")
+  createdAt      DateTime          @default(now())
+  
+  metadata       ProductMetadata[]
+  saleItems      SaleItem[]
+  
+  @@map("products")
+}
+
+model ProductMetadata {
+  id        String  @id @default(uuid())
+  productId String  @map("product_id_fk")
+  key       String
+  value     String
+  
+  product   Product @relation(fields: [productId], references: [id])
+  
+  @@map("product_metadata")
+}
+
+model Sale {
+  id            String     @id @default(uuid())
+  cashierId     String     @map("cashier_id_fk")
+  totalAmount   Float      @map("total_amount")
+  paymentMethod String     @map("payment_method")
+  createdAt     DateTime   @default(now())
+  
+  cashier       User       @relation(fields: [cashierId], references: [id])
+  items         SaleItem[]
+  
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String  @id @default(uuid())
+  saleId      String  @map("sale_id_fk")
+  productId   String  @map("product_id_fk")
+  quantity    Int
+  priceAtSale Float   @map("price_at_sale")
+  
+  sale        Sale    @relation(fields: [saleId], references: [id])
+  product     Product @relation(fields: [productId], references: [id])
+  
+  @@map("sale_items")
+}
