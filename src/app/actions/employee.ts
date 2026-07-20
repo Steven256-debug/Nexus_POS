@@ -12,6 +12,7 @@ export async function getEmployeeDashboardData(employeeId: string) {
     user = {
       id: employeeId,
       email: 'cashier@example.com',
+      password: '',
       role: 'EMPLOYEE',
       createdAt: new Date(),
     };

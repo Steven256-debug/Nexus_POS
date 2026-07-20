@@ -23,7 +23,7 @@ export default async function EmployeeDashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground mb-2">Employee Dashboard</h1>
-        <p className="text-muted-foreground text-lg">Welcome back, {user.email.split('@')[0]}. Here is your performance for today.</p>
+        <p className="text-muted-foreground text-lg">Welcome back, {user?.email?.split('@')[0] || 'Employee'}. Here is your performance for today.</p>
       </div>
 
       {/* Personal Performance Stats */}

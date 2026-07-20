@@ -26,7 +26,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
   useEffect(() => {
     if (product) {
       setFormData({
-        name: product.name, sku: product.sku, category: product.category, 
+        name: product.name, sku: product.sku, category: product.category || '',
         pricePerUnit: product.pricePerUnit, stockQuantity: product.stockQuantity, minStockAlert: product.minStockAlert,
         imageUrl: product.imageUrl || ''
       });
@@ -127,7 +127,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+              <Select value={(formData.category as string) || ''} onValueChange={v => setFormData({...formData, category: v || ''})}>
                 <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DOORS">Doors</SelectItem>

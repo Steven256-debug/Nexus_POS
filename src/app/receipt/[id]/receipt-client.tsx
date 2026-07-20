@@ -14,9 +14,11 @@ export default function ReceiptClient({ sale }: { sale: any }) {
       
       {/* Controls (Hidden on print) */}
       <div className="mb-8 flex gap-4 w-full max-w-[80mm] justify-between print:hidden">
-        <Button asChild variant="outline" className="bg-card text-card-foreground rounded-xl shadow-sm hover:bg-muted/50">
-          <Link href="/pos"><ArrowLeft className="w-4 h-4 mr-2" /> Back</Link>
-        </Button>
+        <Link href="/pos">
+          <Button variant="outline" className="bg-card text-card-foreground rounded-xl shadow-sm hover:bg-muted/50">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          </Button>
+        </Link>
         <Button onClick={handlePrint} className="bg-zinc-900 text-white hover:bg-zinc-800 rounded-xl shadow-md">
           <Printer className="w-4 h-4 mr-2" /> Print
         </Button>
