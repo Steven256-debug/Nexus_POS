@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AutoSizeText } from '@/components/auto-size-text';
 import { processSale } from '@/app/actions/sales';
 import { useRouter } from 'next/navigation';
 
@@ -171,9 +172,11 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
                       : 'border-border bg-card text-card-foreground hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer active:scale-[0.98]'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">{product.sku}</span>
-                    <span className="font-bold text-xl text-blue-600">GH₵{product.pricePerUnit.toFixed(2)}</span>
+                  <div className="flex justify-between items-start mb-4 gap-2">
+                    <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-lg shrink-0">{product.sku}</span>
+                    <div className="min-w-0 flex-1 flex justify-end">
+                      <AutoSizeText align="right" className="font-bold text-xl text-blue-600">GH₵{product.pricePerUnit.toFixed(2)}</AutoSizeText>
+                    </div>
                   </div>
                   {product.imageUrl && (
                     <div className="mb-4 -mx-1 -mt-2 rounded-xl overflow-hidden h-32 bg-muted flex items-center justify-center">

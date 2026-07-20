@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, ReactNode } from 'react';
 
-export function AutoSizeText({ children, className = '' }: { children: ReactNode, className?: string }) {
+export function AutoSizeText({ children, className = '', align = 'left' }: { children: ReactNode, className?: string, align?: 'left' | 'right' | 'center' }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -41,11 +41,13 @@ export function AutoSizeText({ children, className = '' }: { children: ReactNode
     return () => observer.disconnect();
   }, [children]);
 
+  const originClass = align === 'right' ? 'origin-right ml-auto' : align === 'center' ? 'origin-center mx-auto' : 'origin-left';
+
   return (
     <div ref={containerRef} className="w-full min-w-0 overflow-hidden flex items-center">
       <div 
         ref={textRef} 
-        className={`whitespace-nowrap origin-left transition-transform duration-75 ${className}`}
+        className={`whitespace-nowrap transition-transform duration-75 ${originClass} ${className}`}
         style={{ transform: `scale(${scale})` }}
       >
         {children}
