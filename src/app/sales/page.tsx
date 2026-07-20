@@ -42,7 +42,7 @@ export default async function SalesPage() {
                 <TableCell>
                   <Badge variant="secondary" className="bg-muted">{sale.paymentMethod}</Badge>
                 </TableCell>
-                <TableCell className="text-right font-bold text-blue-600">${sale.totalAmount.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-bold text-blue-600">GH₵{sale.totalAmount.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <Link href={`/receipt/${sale.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
                     View Receipt

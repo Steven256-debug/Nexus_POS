@@ -173,7 +173,7 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
                 >
                   <div className="flex justify-between items-start mb-4">
                     <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-lg">{product.sku}</span>
-                    <span className="font-bold text-xl text-blue-600">${product.pricePerUnit.toFixed(2)}</span>
+                    <span className="font-bold text-xl text-blue-600">GH₵{product.pricePerUnit.toFixed(2)}</span>
                   </div>
                   {product.imageUrl && (
                     <div className="mb-4 -mx-1 -mt-2 rounded-xl overflow-hidden h-32 bg-muted flex items-center justify-center">
@@ -211,7 +211,7 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
               View Cart ({cart.length})
             </span>
             <span className="font-bold bg-background/20 text-foreground px-3 py-1.5 rounded-lg border border-white/10 shadow-inner">
-              ${total.toFixed(2)}
+              GH₵{total.toFixed(2)}
             </span>
           </Button>
         </div>
@@ -276,7 +276,7 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
                 <div key={item.id} className="flex flex-col p-4 bg-card text-card-foreground rounded-2xl border border-border shadow-sm gap-3 group">
                   <div className="flex justify-between items-start gap-4">
                     <h4 className="font-semibold text-foreground leading-tight">{item.name}</h4>
-                    <span className="font-bold text-blue-600 whitespace-nowrap">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-bold text-blue-600 whitespace-nowrap">GH₵{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-xl p-1">
@@ -309,15 +309,15 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
           <div className="space-y-3 text-sm mb-6">
             <div className="flex justify-between text-muted-foreground font-medium">
               <span>Subtotal</span>
-              <span className="text-foreground">${subtotal.toFixed(2)}</span>
+              <span className="text-foreground">GH₵{subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground font-medium">
               <span>Tax (10%)</span>
-              <span className="text-foreground">${tax.toFixed(2)}</span>
+              <span className="text-foreground">GH₵{tax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-end pt-4 border-t border-dashed border-border">
               <span className="text-lg font-bold text-foreground">Total</span>
-              <span className="text-4xl font-black text-blue-600 tracking-tight">${total.toFixed(2)}</span>
+              <span className="text-4xl font-black text-blue-600 tracking-tight">GH₵{total.toFixed(2)}</span>
             </div>
           </div>
           <Button 
@@ -339,7 +339,7 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
           <div className="py-6">
             <div className="text-center mb-10 p-6 bg-muted/50 rounded-2xl border border-border">
               <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider mb-2">Amount Due</p>
-              <p className="text-6xl font-black text-blue-600 tracking-tighter">${total.toFixed(2)}</p>
+              <p className="text-6xl font-black text-blue-600 tracking-tighter">GH₵{total.toFixed(2)}</p>
             </div>
             
             <div className="grid grid-cols-3 gap-4">

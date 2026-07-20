@@ -139,7 +139,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Price ($)</Label>
+              <Label>Price (GH₵)</Label>
               <Input type="number" step="0.01" required value={formData.pricePerUnit} onChange={e => setFormData({...formData, pricePerUnit: Number(e.target.value)})} className="rounded-lg" />
             </div>
             <div className="space-y-2">

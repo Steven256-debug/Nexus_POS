@@ -20,7 +20,7 @@ export default function InventoryAnalytics({ products }: { products: any[] }) {
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
-            <h3 className="text-2xl font-bold text-foreground">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            <h3 className="text-2xl font-bold text-foreground">GH₵{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
           </div>
         </div>
       </div>

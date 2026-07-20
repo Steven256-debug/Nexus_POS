@@ -159,7 +159,7 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
                     {product.category.replace('_', ' ')}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right font-medium">${product.pricePerUnit.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-medium">GH₵{product.pricePerUnit.toFixed(2)}</TableCell>
                 <TableCell className="text-right font-medium">
                   {product.stockQuantity}
                 </TableCell>

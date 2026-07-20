@@ -35,7 +35,7 @@ export default async function EmployeeDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Your Revenue Today</p>
-              <h3 className="text-2xl font-bold text-foreground">${stats.todayRevenue.toFixed(2)}</h3>
+              <h3 className="text-2xl font-bold text-foreground">GH₵{stats.todayRevenue.toFixed(2)}</h3>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default async function EmployeeDashboard() {
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <p className="font-bold text-foreground group-hover:text-blue-700">${sale.totalAmount.toFixed(2)}</p>
+                      <p className="font-bold text-foreground group-hover:text-blue-700">GH₵{sale.totalAmount.toFixed(2)}</p>
                       <ArrowRight className="w-4 h-4 text-zinc-300 group-hover:text-blue-600 transition-colors" />
                     </div>
                   </div>

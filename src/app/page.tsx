@@ -29,7 +29,7 @@ export default async function Dashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
-              <h3 className="text-2xl font-bold text-foreground">${todayRevenue.toFixed(2)}</h3>
+              <h3 className="text-2xl font-bold text-foreground">GH₵{todayRevenue.toFixed(2)}</h3>
             </div>
           </div>
           <div className="text-sm text-emerald-600 font-medium flex items-center gap-1">
@@ -74,7 +74,7 @@ export default async function Dashboard() {
                    <p className="font-medium">Receipt #{sale.id.slice(0, 8).toUpperCase()}</p>
                    <p className="text-sm text-muted-foreground">{new Date(sale.createdAt).toLocaleTimeString()}</p>
                  </div>
-                 <p className="font-bold text-blue-600">${sale.totalAmount.toFixed(2)}</p>
+                 <p className="font-bold text-blue-600">GH₵{sale.totalAmount.toFixed(2)}</p>
                </div>
              ))}
              {sales.length === 0 && (

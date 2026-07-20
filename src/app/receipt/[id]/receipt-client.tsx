@@ -53,10 +53,10 @@ export default function ReceiptClient({ sale }: { sale: any }) {
             <div key={item.id} className="mb-2">
               <div className="flex justify-between">
                 <span className="truncate pr-2">{item.product.name}</span>
-                <span>${(item.priceAtSale * item.quantity).toFixed(2)}</span>
+                <span>GH₵{(item.priceAtSale * item.quantity).toFixed(2)}</span>
               </div>
               <div className="text-xs text-zinc-500">
-                {item.quantity} x ${item.priceAtSale.toFixed(2)}
+                {item.quantity} x GH₵{item.priceAtSale.toFixed(2)}
               </div>
             </div>
           ))}
@@ -65,15 +65,15 @@ export default function ReceiptClient({ sale }: { sale: any }) {
         <div className="border-t border-black pt-2 mb-6 space-y-1">
           <div className="flex justify-between text-xs">
             <span>SUBTOTAL</span>
-            <span>${(sale.totalAmount / 1.1).toFixed(2)}</span>
+            <span>GH₵{(sale.totalAmount / 1.1).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-xs">
             <span>TAX (10%)</span>
-            <span>${(sale.totalAmount - (sale.totalAmount / 1.1)).toFixed(2)}</span>
+            <span>GH₵{(sale.totalAmount - (sale.totalAmount / 1.1)).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg font-black mt-2">
             <span>TOTAL</span>
-            <span>${sale.totalAmount.toFixed(2)}</span>
+            <span>GH₵{sale.totalAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-xs mt-2">
             <span>METHOD</span>
