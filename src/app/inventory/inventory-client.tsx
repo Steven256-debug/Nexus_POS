@@ -93,17 +93,17 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <Input 
               placeholder="Search by name or SKU..." 
-              className="pl-10 bg-white border-zinc-200 shadow-sm rounded-xl focus-visible:ring-blue-500 w-full"
+              className="pl-10 bg-card text-card-foreground border-border shadow-sm rounded-xl focus-visible:ring-blue-500 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex bg-zinc-200/50 p-1 rounded-xl shadow-inner border border-zinc-200 w-full sm:w-auto overflow-x-auto scrollbar-hide">
+          <div className="flex bg-zinc-200/50 p-1 rounded-xl shadow-inner border border-border w-full sm:w-auto overflow-x-auto scrollbar-hide">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={`whitespace-nowrap px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${categoryFilter === cat ? 'bg-white shadow-sm text-blue-600' : 'text-zinc-600 hover:text-zinc-900'}`}
+                className={`whitespace-nowrap px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${categoryFilter === cat ? 'bg-card text-card-foreground shadow-sm text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {cat.replace('_', ' ')}
               </button>
@@ -122,7 +122,7 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
             onClick={() => fileInputRef.current?.click()}
             variant="outline"
             disabled={isImporting}
-            className="flex-1 sm:flex-none bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700 shadow-sm rounded-xl h-12 sm:h-10"
+            className="flex-1 sm:flex-none bg-card text-card-foreground hover:bg-muted/50 border-border text-foreground shadow-sm rounded-xl h-12 sm:h-10"
           >
             <Plus className="w-4 h-4 mr-2" /> {isImporting ? 'Importing...' : 'Import CSV'}
           </Button>
@@ -135,10 +135,10 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto pb-4 sm:pb-0">
           <Table className="min-w-[800px]">
-            <TableHeader className="bg-zinc-50/80 backdrop-blur-sm">
+            <TableHeader className="bg-muted/50/80 backdrop-blur-sm">
             <TableRow>
               <TableHead>SKU</TableHead>
               <TableHead>Product Name</TableHead>
@@ -151,11 +151,11 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => (
-              <TableRow key={product.id} className="group hover:bg-zinc-50/50 transition-colors">
-                <TableCell className="font-mono text-xs text-zinc-500">{product.sku}</TableCell>
-                <TableCell className="font-medium text-zinc-900">{product.name}</TableCell>
+              <TableRow key={product.id} className="group hover:bg-muted/50/50 transition-colors">
+                <TableCell className="font-mono text-xs text-muted-foreground">{product.sku}</TableCell>
+                <TableCell className="font-medium text-foreground">{product.name}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="bg-zinc-100 text-zinc-700 font-medium">
+                  <Badge variant="secondary" className="bg-muted text-foreground font-medium">
                     {product.category.replace('_', ' ')}
                   </Badge>
                 </TableCell>
@@ -188,7 +188,7 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
             ))}
             {filteredProducts.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-zinc-500">
+                <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <Search className="w-8 h-8 text-zinc-300" />
                     <p>No products found matching your filters.</p>

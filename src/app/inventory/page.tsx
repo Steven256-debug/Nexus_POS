@@ -10,8 +10,8 @@ export default async function InventoryPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight mb-2 text-zinc-900">Inventory Manager</h1>
-        <p className="text-zinc-500 text-lg">Manage your products, stock levels, and metadata.</p>
+        <h1 className="text-4xl font-bold tracking-tight mb-2 text-foreground">Inventory Manager</h1>
+        <p className="text-muted-foreground text-lg">Manage your products, stock levels, and metadata.</p>
       </div>
       
       <InventoryAnalytics products={products} />

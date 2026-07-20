@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, ShoppingCart, History, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, History, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
+import { ThemeToggle } from './theme-toggle';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -30,9 +31,10 @@ export function Navigation() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className="hidden lg:flex fixed top-0 left-0 h-screen w-64 bg-zinc-950 text-white border-r border-zinc-800 p-4 shadow-xl z-50 flex-col hide-on-print">
-        <div className="mb-8 p-2">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Nexus POS</h1>
+      <nav className="hidden lg:flex fixed top-0 left-0 h-screen w-64 bg-card text-card-foreground border-r border-border p-4 shadow-sm z-50 flex-col hide-on-print">
+        <div className="mb-8 p-2 flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Nexus POS</h1>
+          <ThemeToggle />
         </div>
         <ul className="space-y-2 flex-1">
           {links.map(link => {
@@ -43,10 +45,10 @@ export function Navigation() {
                 <Link 
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group text-sm font-medium",
                     isActive 
-                      ? "bg-blue-600/10 text-blue-400 font-medium shadow-sm border border-blue-500/20" 
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-900"
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   )}
                 >
                   <Icon className={cn("w-5 h-5 transition-transform duration-200", isActive ? "scale-110" : "group-hover:scale-110")} />
@@ -57,21 +59,21 @@ export function Navigation() {
           })}
         </ul>
         
-        <div className="mt-auto pt-4 border-t border-zinc-800 flex flex-col gap-2">
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50 backdrop-blur-sm">
+        <div className="mt-auto pt-4 border-t border-border flex flex-col gap-2">
+          <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-500 flex items-center justify-center text-sm font-bold shadow-lg uppercase">
+              <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold uppercase">
                 {session.user?.email?.[0] || 'U'}
               </div>
               <div className="overflow-hidden">
-                <p className="text-sm font-medium text-white truncate">{session.user?.email}</p>
-                <p className="text-xs text-zinc-500">{role}</p>
+                <p className="text-sm font-medium text-foreground truncate">{session.user?.email}</p>
+                <p className="text-xs text-muted-foreground">{role}</p>
               </div>
             </div>
           </div>
           <button 
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="w-full flex items-center justify-center gap-2 p-3 text-sm font-medium text-zinc-400 hover:text-white hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 p-3 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -80,7 +82,7 @@ export function Navigation() {
       </nav>
 
       {/* Mobile Bottom Tab Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-zinc-950 text-white border-t border-zinc-800 z-50 hide-on-print pb-safe">
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-card text-card-foreground border-t border-border z-50 hide-on-print pb-safe">
         <ul className="flex items-center justify-around p-2">
           {links.map(link => {
             const Icon = link.icon;
@@ -91,7 +93,7 @@ export function Navigation() {
                   href={link.href}
                   className={cn(
                     "flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200",
-                    isActive ? "text-blue-400" : "text-zinc-400 hover:text-white"
+                    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <Icon className={cn("w-5 h-5 mb-1 transition-transform duration-200", isActive ? "scale-110" : "")} />
@@ -101,13 +103,9 @@ export function Navigation() {
             );
           })}
           <li className="flex-1">
-            <button 
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="w-full flex flex-col items-center justify-center p-2 text-zinc-400 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="w-5 h-5 mb-1" />
-              <span className="text-[10px] font-medium whitespace-nowrap">Sign Out</span>
-            </button>
+            <div className="w-full flex flex-col items-center justify-center p-2 text-muted-foreground transition-colors">
+              <ThemeToggle className="mb-1 bg-transparent hover:bg-transparent" />
+            </div>
           </li>
         </ul>
       </nav>

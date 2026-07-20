@@ -102,14 +102,14 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-white rounded-2xl w-[95vw] max-h-[90vh] overflow-y-auto sm:w-full p-6">
+      <DialogContent className="max-w-md bg-card text-card-foreground rounded-2xl w-[95vw] max-h-[90vh] overflow-y-auto sm:w-full p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="flex items-center gap-4">
             {previewUrl && (
-              <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-zinc-200" />
+              <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-border" />
             )}
             <div className="flex-1 space-y-2">
               <Label>Product Image</Label>
@@ -153,8 +153,8 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
           </div>
 
           {currentMetaFields.length > 0 && (
-            <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200 space-y-4 shadow-inner">
-              <h4 className="text-sm font-semibold text-zinc-700 uppercase tracking-wider">Category Details</h4>
+            <div className="p-4 bg-muted/50 rounded-xl border border-border space-y-4 shadow-inner">
+              <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Category Details</h4>
               {currentMetaFields.map(field => (
                 <div key={field} className="space-y-2">
                   <Label>{field}</Label>
@@ -162,7 +162,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
                     value={metadata[field] || ''} 
                     onChange={e => handleMetadataChange(field, e.target.value)} 
                     placeholder={`Enter ${field.toLowerCase()}...`}
-                    className="bg-white rounded-lg"
+                    className="bg-card text-card-foreground rounded-lg"
                   />
                 </div>
               ))}
