@@ -33,9 +33,9 @@ export default async function EmployeeDashboard() {
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
               <DollarSign className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Your Revenue Today</p>
-              <h3 className="text-2xl font-bold text-foreground">GH₵{stats.todayRevenue.toFixed(2)}</h3>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-muted-foreground truncate">Your Revenue Today</p>
+              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${stats.todayRevenue.toFixed(2)}`}>GH₵{stats.todayRevenue.toFixed(2)}</h3>
             </div>
           </div>
         </div>
@@ -45,9 +45,9 @@ export default async function EmployeeDashboard() {
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
               <Activity className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Your Sales Today</p>
-              <h3 className="text-2xl font-bold text-foreground">{stats.todaySalesCount}</h3>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-muted-foreground truncate">Your Sales Count</p>
+              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${stats.todaySalesCount}`}>{stats.todaySalesCount}</h3>
             </div>
           </div>
         </div>

@@ -18,9 +18,9 @@ export default function InventoryAnalytics({ products }: { products: any[] }) {
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <DollarSign className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Inventory Value</p>
-            <h3 className="text-2xl font-bold text-foreground">GH₵{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-muted-foreground truncate">Total Inventory Value</p>
+            <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>GH₵{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
           </div>
         </div>
       </div>
@@ -30,9 +30,9 @@ export default function InventoryAnalytics({ products }: { products: any[] }) {
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
             <Package className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Unique Products</p>
-            <h3 className="text-2xl font-bold text-foreground">{totalItems}</h3>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-muted-foreground truncate">Total Unique Products</p>
+            <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${totalItems}`}>{totalItems}</h3>
           </div>
         </div>
       </div>

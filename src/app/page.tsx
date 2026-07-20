@@ -27,9 +27,9 @@ export default async function Dashboard() {
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
               <DollarSign className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
-              <h3 className="text-2xl font-bold text-foreground">GH₵{todayRevenue.toFixed(2)}</h3>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-muted-foreground truncate">Today's Revenue</p>
+              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${todayRevenue.toFixed(2)}`}>GH₵{todayRevenue.toFixed(2)}</h3>
             </div>
           </div>
           <div className="text-sm text-emerald-600 font-medium flex items-center gap-1">
@@ -42,9 +42,9 @@ export default async function Dashboard() {
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
               <Activity className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Today's Sales</p>
-              <h3 className="text-2xl font-bold text-foreground">{todaySales.length}</h3>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-muted-foreground truncate">Today's Sales</p>
+              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${todaySales.length}`}>{todaySales.length}</h3>
             </div>
           </div>
           <Link href="/sales" className="text-sm text-blue-600 hover:text-blue-700 font-medium">View all sales &rarr;</Link>
@@ -55,9 +55,9 @@ export default async function Dashboard() {
             <div className="p-3 bg-red-50 text-red-600 rounded-xl">
               <Package className="w-6 h-6" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Low Stock Alerts</p>
-              <h3 className="text-2xl font-bold text-foreground">{lowStockItems.length}</h3>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-muted-foreground truncate">Low Stock Alerts</p>
+              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${lowStockItems.length}`}>{lowStockItems.length}</h3>
             </div>
           </div>
           <Link href="/inventory" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Manage inventory &rarr;</Link>
