@@ -9,14 +9,15 @@ export default async function SalesPage() {
   const sales = await getSales();
   
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground mb-2">Sales History</h1>
         <p className="text-muted-foreground text-lg">View past transactions and receipt copies.</p>
       </div>
 
       <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
-        <Table>
+        <div className="overflow-x-auto pb-4 sm:pb-0">
+          <Table className="min-w-[800px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>Receipt ID</TableHead>
@@ -58,6 +59,7 @@ export default async function SalesPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ export default async function Dashboard() {
   const lowStockItems = products.filter(p => p.stockQuantity <= p.minStockAlert);
   
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground mb-2">Dashboard</h1>
         <p className="text-muted-foreground text-lg">Welcome back. Here's what's happening with your store today.</p>
