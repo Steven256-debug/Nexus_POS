@@ -1,8 +1,35 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+// Initialize Upstash Redis only if env variables are present
+const redis = process.env.UPSTASH_REDIS_REST_URL
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    })
+  : null;
+
+// Create a new ratelimiter, that allows 20 requests per 10 seconds
+const ratelimit = redis
+  ? new Ratelimit({
+      redis: redis,
+      limiter: Ratelimit.slidingWindow(20, "10 s"),
+    })
+  : null;
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
+    // 1. Rate Limiting Check
+    if (ratelimit) {
+      const ip = req.ip ?? "127.0.0.1";
+      const { success } = await ratelimit.limit(ip);
+      if (!success) {
+        return new NextResponse("Too Many Requests - Rate Limit Exceeded", { status: 429 });
+      }
+    }
+
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
