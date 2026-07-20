@@ -25,7 +25,7 @@ export default function ReceiptClient({ sale }: { sale: any }) {
       </div>
 
       {/* Receipt Paper */}
-      <div className="bg-card text-card-foreground p-6 w-full max-w-[80mm] shadow-2xl print:shadow-none print:w-full print:max-w-none font-mono text-sm leading-tight text-black border border-border">
+      <div className="bg-white p-6 w-full max-w-[80mm] shadow-2xl print:shadow-none print:w-full print:max-w-none font-mono text-sm leading-tight text-black border border-zinc-200">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-black mb-1">NEXUS POS</h1>
           <p className="text-xs text-zinc-500">123 Retail Ave, Commerce City</p>
