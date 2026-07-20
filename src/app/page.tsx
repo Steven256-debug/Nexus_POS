@@ -2,6 +2,7 @@ import { getSales } from '@/app/actions/sales';
 import { getProducts } from '@/app/actions/inventory';
 import { Package, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { AutoSizeText } from '@/components/auto-size-text';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,7 @@ export default async function Dashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-muted-foreground truncate">Today's Revenue</p>
-              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${todayRevenue.toFixed(2)}`}>GH₵{todayRevenue.toFixed(2)}</h3>
+              <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">GH₵{todayRevenue.toFixed(2)}</AutoSizeText>
             </div>
           </div>
           <div className="text-sm text-emerald-600 font-medium flex items-center gap-1">
@@ -44,7 +45,7 @@ export default async function Dashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-muted-foreground truncate">Today's Sales</p>
-              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${todaySales.length}`}>{todaySales.length}</h3>
+              <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">{todaySales.length}</AutoSizeText>
             </div>
           </div>
           <Link href="/sales" className="text-sm text-blue-600 hover:text-blue-700 font-medium">View all sales &rarr;</Link>
@@ -57,7 +58,7 @@ export default async function Dashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-muted-foreground truncate">Low Stock Alerts</p>
-              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${lowStockItems.length}`}>{lowStockItems.length}</h3>
+              <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">{lowStockItems.length}</AutoSizeText>
             </div>
           </div>
           <Link href="/inventory" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Manage inventory &rarr;</Link>

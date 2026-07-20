@@ -1,5 +1,6 @@
 import { getEmployeeDashboardData } from '@/app/actions/employee';
 import { ShoppingCart, Clock, DollarSign, Package, ArrowRight, Activity, CalendarDays } from 'lucide-react';
+import { AutoSizeText } from '@/components/auto-size-text';
 import Link from 'next/link';
 
 import { getServerSession } from 'next-auth';
@@ -35,7 +36,7 @@ export default async function EmployeeDashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-muted-foreground truncate">Your Revenue Today</p>
-              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${stats.todayRevenue.toFixed(2)}`}>GH₵{stats.todayRevenue.toFixed(2)}</h3>
+              <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">GH₵{stats.todayRevenue.toFixed(2)}</AutoSizeText>
             </div>
           </div>
         </div>
@@ -47,7 +48,7 @@ export default async function EmployeeDashboard() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-muted-foreground truncate">Your Sales Count</p>
-              <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${stats.todaySalesCount}`}>{stats.todaySalesCount}</h3>
+              <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">{stats.todaySalesCount}</AutoSizeText>
             </div>
           </div>
         </div>

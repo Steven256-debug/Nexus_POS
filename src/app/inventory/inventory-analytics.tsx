@@ -1,4 +1,5 @@
 import { Activity, DollarSign, Package, AlertTriangle } from 'lucide-react';
+import { AutoSizeText } from '@/components/auto-size-text';
 
 export default function InventoryAnalytics({ products }: { products: any[] }) {
   const totalValue = products.reduce((acc, p) => acc + (p.pricePerUnit * p.stockQuantity), 0);
@@ -20,7 +21,7 @@ export default function InventoryAnalytics({ products }: { products: any[] }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-muted-foreground truncate">Total Inventory Value</p>
-            <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`GH₵${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>GH₵{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">GH₵{totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</AutoSizeText>
           </div>
         </div>
       </div>
@@ -32,7 +33,19 @@ export default function InventoryAnalytics({ products }: { products: any[] }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-muted-foreground truncate">Total Unique Products</p>
-            <h3 className="text-xl xl:text-2xl font-bold text-foreground truncate" title={`${totalItems}`}>{totalItems}</h3>
+            <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">{totalItems}</AutoSizeText>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 bg-card text-card-foreground rounded-2xl border border-border shadow-sm">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="p-3 bg-red-50 text-red-600 rounded-xl">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-muted-foreground truncate">Out of Stock</p>
+            <AutoSizeText className="text-xl xl:text-2xl font-bold text-foreground">{outOfStock}</AutoSizeText>
           </div>
         </div>
       </div>
