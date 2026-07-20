@@ -102,7 +102,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-card text-card-foreground rounded-2xl w-[95vw] max-h-[90vh] overflow-y-auto sm:w-full p-6">
+      <DialogContent className="max-w-md bg-white dark:bg-zinc-950 text-foreground rounded-2xl w-[95vw] max-h-[90vh] overflow-y-auto sm:w-full p-6 shadow-2xl border border-border sm:max-w-lg z-50">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
         </DialogHeader>
@@ -113,7 +113,12 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
             )}
             <div className="flex-1 space-y-2">
               <Label>Product Image</Label>
-              <Input type="file" accept="image/*" onChange={handleImageChange} className="rounded-lg" />
+              <Input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageChange} 
+                className="rounded-lg file:bg-blue-50 file:text-blue-700 file:border-0 file:rounded-md file:px-4 file:py-1.5 file:mr-4 file:text-sm file:font-semibold hover:file:bg-blue-100 cursor-pointer text-sm py-1.5 h-auto" 
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -128,7 +133,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
             <div className="space-y-2">
               <Label>Category</Label>
               <Select value={(formData.category as string) || ''} onValueChange={v => setFormData({...formData, category: v || ''})}>
-                <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectTrigger className="rounded-lg bg-background"><SelectValue placeholder="Select category..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DOORS">Doors</SelectItem>
                   <SelectItem value="TEXTILES">Textiles</SelectItem>
