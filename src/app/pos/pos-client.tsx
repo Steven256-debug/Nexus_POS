@@ -172,10 +172,10 @@ export default function PosClient({ initialProducts }: { initialProducts: any[] 
                       : 'border-border bg-card text-card-foreground hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer active:scale-[0.98]'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4 gap-2">
+                  <div className="flex flex-col items-start mb-4 gap-2">
                     <span className="text-xs font-mono font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-lg shrink-0">{product.sku}</span>
-                    <div className="min-w-0 flex-1 flex justify-end">
-                      <AutoSizeText align="right" className="font-bold text-xl text-blue-600">GH₵{product.pricePerUnit.toFixed(2)}</AutoSizeText>
+                    <div className="w-full">
+                      <AutoSizeText align="left" className="font-bold text-2xl text-blue-600">GH₵{product.pricePerUnit.toFixed(2)}</AutoSizeText>
                     </div>
                   </div>
                   {product.imageUrl && (
