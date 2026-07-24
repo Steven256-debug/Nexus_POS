@@ -1,11 +1,24 @@
-import { Loader2 } from 'lucide-react';
-
 export default function Loading() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full text-muted-foreground animate-in fade-in duration-500">
-      <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
-      <h2 className="text-xl font-semibold text-foreground">Loading...</h2>
-      <p className="text-sm mt-2">Fetching your data securely.</p>
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-pulse">
+      {/* Banner Skeleton */}
+      <div className="h-48 rounded-3xl bg-muted/60 w-full"></div>
+
+      {/* KPI Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-32 rounded-3xl bg-muted/60 p-6"></div>
+        ))}
+      </div>
+
+      {/* Chart Skeleton */}
+      <div className="h-80 rounded-3xl bg-muted/60 w-full"></div>
+
+      {/* Bottom Grid Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="h-64 rounded-3xl bg-muted/60"></div>
+        <div className="h-64 rounded-3xl bg-muted/60"></div>
+      </div>
     </div>
   );
 }

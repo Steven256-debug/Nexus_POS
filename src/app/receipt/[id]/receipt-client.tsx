@@ -4,9 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
+import { toast } from 'sonner';
+
 export default function ReceiptClient({ sale }: { sale: any }) {
   const handlePrint = () => {
-    window.print();
+    try {
+      window.print();
+    } catch (err: any) {
+      toast.error('Printer connection failed: ' + err.message);
+    }
   };
 
   return (

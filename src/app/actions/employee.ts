@@ -1,8 +1,13 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function getEmployeeDashboardData(employeeId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error('Unauthorized');
+
   let user = await prisma.user.findUnique({
     where: { id: employeeId }
   });
@@ -11,7 +16,8 @@ export async function getEmployeeDashboardData(employeeId: string) {
     // Fallback to mock data if the dummy user isn't in DB yet
     user = {
       id: employeeId,
-      email: 'cashier@example.com',
+      name: 'Kwame Mensah',
+      email: 'cashier@frankoventures.com',
       password: '',
       role: 'EMPLOYEE',
       createdAt: new Date(),

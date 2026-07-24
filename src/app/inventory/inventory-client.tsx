@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import ProductFormModal from './product-form-modal';
 import { deleteProduct, importProductsBatch } from '@/app/actions/inventory';
 import { useRef } from 'react';
+import { toast } from 'sonner';
 
-export default function InventoryClient({ initialProducts }: { initialProducts: any[] }) {
+export default function InventoryClient({ initialProducts, userRole = 'EMPLOYEE' }: { initialProducts: any[], userRole?: string }) {
   const [products, setProducts] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -18,6 +19,12 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  const getCatName = (prod: any) => {
+    if (!prod?.category) return 'General';
+    if (typeof prod.category === 'object') return prod.category.name || 'General';
+    return String(prod.category);
+  };
 
   const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,7 +38,6 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
       
       const newProducts = [];
       for (let i = 1; i < lines.length; i++) {
-        // Handle basic CSV splitting (doesn't support commas inside quotes for MVP)
         const values = lines[i].split(',').map(v => v.trim());
         const product: any = {};
         headers.forEach((h, index) => {
@@ -42,12 +48,12 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
           else product[h] = values[index];
         });
         
-        if (product.name && product.sku && product.category) {
+        if (product.name && product.sku) {
           newProducts.push({
             name: product.name,
             sku: product.sku,
-            category: product.category.toUpperCase(),
             pricePerUnit: Number(product.pricePerUnit || 0),
+            costPrice: Number(product.costPrice || 0),
             stockQuantity: Number(product.stockQuantity || 0),
             minStockAlert: Number(product.minStockAlert || 5),
             imageUrl: product.imageUrl || null
@@ -59,11 +65,11 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
         await importProductsBatch(newProducts);
         window.location.reload();
       } else {
-        alert("No valid products found in CSV. Make sure headers are: name, sku, category, price, stock");
+        toast.error('No valid products found in CSV. Make sure headers are: name, sku, price, stock');
       }
     } catch (err) {
       console.error(err);
-      alert("Error importing CSV");
+      toast.error('Error importing CSV');
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -72,18 +78,44 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'ALL' || p.category === categoryFilter;
+    const catName = getCatName(p);
+    const matchesCategory = categoryFilter === 'ALL' || catName === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      await deleteProduct(id);
-      setProducts(products.filter(p => p.id !== id));
+    if (confirm('Are you sure you want to delete this product? This will also remove it from past sales.')) {
+      try {
+        await deleteProduct(id);
+        setProducts(products.filter(p => p.id !== id));
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to delete product. It may be locked by the system.');
+        window.location.reload(); // Re-sync state
+      }
     }
   };
 
-  const categories = ['ALL', 'DOORS', 'TEXTILES', 'BUILDING_MATERIALS'];
+  const handleClearAll = async () => {
+    if (confirm('WARNING: Are you absolutely sure you want to DELETE ALL PRODUCTS? This action cannot be undone!')) {
+      try {
+        // We'll delete them one by one for now since we have the cascade logic in the action
+        // Or better yet, we just alert them that this will take a moment
+        toast.info('Clearing all products... Please wait.');
+        for (const p of products) {
+          await deleteProduct(p.id);
+        }
+        setProducts([]);
+        toast.success('All products archived successfully!');
+      } catch (err) {
+        console.error(err);
+        toast.error('An error occurred while clearing products.');
+        window.location.reload();
+      }
+    }
+  };
+
+  const categories = ['ALL', 'Aluzinc Sheets', 'Anti-Rust Sheets', 'Roofing Accessories'];
 
   return (
     <div className="space-y-6">
@@ -98,14 +130,14 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex bg-zinc-200/50 p-1 rounded-xl shadow-inner border border-border w-full sm:w-auto overflow-x-auto scrollbar-hide">
+          <div className="flex bg-muted/60 p-1 rounded-xl shadow-inner border border-border w-full sm:w-auto overflow-x-auto scrollbar-hide">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={`whitespace-nowrap px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${categoryFilter === cat ? 'bg-card text-card-foreground shadow-sm text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`whitespace-nowrap px-4 py-2 text-xs rounded-lg font-bold transition-all duration-200 ${categoryFilter === cat ? 'bg-card text-foreground shadow-sm text-blue-600' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                {cat.replace('_', ' ')}
+                {cat}
               </button>
             ))}
           </div>
@@ -118,20 +150,32 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
             className="hidden" 
             onChange={handleCsvImport} 
           />
-          <Button 
-            onClick={() => fileInputRef.current?.click()}
-            variant="outline"
-            disabled={isImporting}
-            className="flex-1 sm:flex-none bg-card text-card-foreground hover:bg-muted/50 border-border text-foreground shadow-sm rounded-xl h-12 sm:h-10"
-          >
-            <Plus className="w-4 h-4 mr-2" /> {isImporting ? 'Importing...' : 'Import CSV'}
-          </Button>
-          <Button 
-            onClick={() => { setEditingProduct(null); setIsModalOpen(true); }}
-            className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 rounded-xl h-12 sm:h-10"
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add Product
-          </Button>
+          {userRole === 'ADMIN' && (
+            <>
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                variant="outline"
+                disabled={isImporting}
+                className="flex-1 sm:flex-none bg-card text-card-foreground hover:bg-muted/50 border-border text-foreground shadow-sm rounded-xl h-12 sm:h-10"
+              >
+                <Plus className="w-4 h-4 mr-2" /> {isImporting ? 'Importing...' : 'Import CSV'}
+              </Button>
+              <Button 
+                onClick={handleClearAll}
+                variant="destructive"
+                className="flex-1 sm:flex-none shadow-sm rounded-xl h-12 sm:h-10"
+                disabled={products.length === 0}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Clear All
+              </Button>
+              <Button 
+                onClick={() => { setEditingProduct(null); setIsModalOpen(true); }}
+                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 rounded-xl h-12 sm:h-10"
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add Product
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -146,7 +190,9 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
               <TableHead className="text-right">Price</TableHead>
               <TableHead className="text-right">Stock</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {userRole === 'ADMIN' && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -156,7 +202,7 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
                 <TableCell className="font-medium text-foreground">{product.name}</TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="bg-muted text-foreground font-medium">
-                    {product.category.replace('_', ' ')}
+                    {getCatName(product)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right font-medium">GH₵{product.pricePerUnit.toFixed(2)}</TableCell>
@@ -174,16 +220,18 @@ export default function InventoryClient({ initialProducts }: { initialProducts: 
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="hover:bg-blue-50 rounded-lg" onClick={() => { setEditingProduct(product); setIsModalOpen(true); }}>
-                      <Edit className="w-4 h-4 text-blue-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="hover:bg-red-50 rounded-lg" onClick={() => handleDelete(product.id)}>
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </Button>
-                  </div>
-                </TableCell>
+                {userRole === 'ADMIN' && (
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="hover:bg-blue-50 rounded-lg" onClick={() => { setEditingProduct(product); setIsModalOpen(true); }}>
+                        <Edit className="w-4 h-4 text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="hover:bg-red-50 rounded-lg" onClick={() => handleDelete(product.id)}>
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
             {filteredProducts.length === 0 && (

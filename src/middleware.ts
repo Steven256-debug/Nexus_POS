@@ -1,35 +1,27 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 
-// Initialize Upstash Redis only if env variables are present
-const redis = process.env.UPSTASH_REDIS_REST_URL
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-    })
-  : null;
+// Routes that employees are allowed to access (read-only view of most pages)
+const EMPLOYEE_ALLOWED_PREFIXES = [
+  '/pos',
+  '/employee',
+  '/receipt',
+  '/sales',
+  '/inventory',
+  '/contacts',
+  '/reports',
+  '/expenses',
+];
 
-// Create a new ratelimiter, that allows 20 requests per 10 seconds
-const ratelimit = redis
-  ? new Ratelimit({
-      redis: redis,
-      limiter: Ratelimit.slidingWindow(20, "10 s"),
-    })
-  : null;
+// Routes that require ADMIN role (destructive/config operations)
+const ADMIN_ONLY_PREFIXES = [
+  '/settings',
+  '/inventory/add',
+  '/inventory/price-update',
+];
 
 export default withAuth(
-  async function middleware(req) {
-    // 1. Rate Limiting Check
-    if (ratelimit) {
-      const ip = req.ip ?? "127.0.0.1";
-      const { success } = await ratelimit.limit(ip);
-      if (!success) {
-        return new NextResponse("Too Many Requests - Rate Limit Exceeded", { status: 429 });
-      }
-    }
-
+  function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
@@ -37,23 +29,26 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Role-based Access Rules
     const role = token.role;
 
-    // Admin can access everything
+    // Admin has full access
     if (role === 'ADMIN') {
       return NextResponse.next();
     }
 
     // Employee access restrictions
     if (role === 'EMPLOYEE') {
-      // Allow pos, employee, receipt
-      if (path.startsWith('/pos') || path.startsWith('/employee') || path.startsWith('/receipt')) {
-        return NextResponse.next();
+      // Block admin-only routes
+      const isAdminOnly = ADMIN_ONLY_PREFIXES.some(prefix => path.startsWith(prefix));
+      if (isAdminOnly) {
+        return NextResponse.redirect(new URL('/employee', req.url));
       }
-      
-      // Redirect everything else to their dashboard
-      return NextResponse.redirect(new URL('/employee', req.url));
+
+      // Allow whitelisted routes
+      const isAllowed = path === '/' || EMPLOYEE_ALLOWED_PREFIXES.some(prefix => path.startsWith(prefix));
+      if (!isAllowed) {
+        return NextResponse.redirect(new URL('/employee', req.url));
+      }
     }
 
     return NextResponse.next();
@@ -67,14 +62,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api/auth (auth endpoints)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - login (login page)
-     */
     '/((?!api/auth|_next/static|_next/image|favicon.ico|login).*)',
   ],
 };

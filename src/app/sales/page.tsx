@@ -2,6 +2,7 @@ import { getSales } from '@/app/actions/sales';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { ReturnModal } from './return-modal';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,9 +45,12 @@ export default async function SalesPage() {
                 </TableCell>
                 <TableCell className="text-right font-bold text-blue-600">GH₵{sale.totalAmount.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/receipt/${sale.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    View Receipt
-                  </Link>
+                  <div className="flex items-center justify-end gap-3">
+                    <ReturnModal sale={sale as any} />
+                    <Link href={`/receipt/${sale.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                      View Receipt
+                    </Link>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

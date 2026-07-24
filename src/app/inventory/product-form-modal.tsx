@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createProduct, updateProduct } from '@/app/actions/inventory';
+import { toast } from 'sonner';
 
 const CATEGORY_METADATA = {
   DOORS: ['Dimensions', 'Material/Finish'],
@@ -92,7 +93,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
       onSaved(saved);
     } catch (err) {
       console.error(err);
-      alert('Error saving product');
+      toast.error('Error saving product');
     } finally {
       setIsSaving(false);
     }

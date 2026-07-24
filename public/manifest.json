@@ -1,0 +1,17 @@
+{
+  "short_name": "Nexus POS",
+  "name": "Francis Amoako Ventures POS Terminal",
+  "description": "Enterprise Point of Sale & Inventory Management",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/pos",
+  "background_color": "#09090b",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "any"
+}
