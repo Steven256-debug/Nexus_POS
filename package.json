@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "auto-sync": "node scripts/auto-sync.js"
+    "auto-sync": "node scripts/auto-sync.js",
+    "backup": "node scripts/backup.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
