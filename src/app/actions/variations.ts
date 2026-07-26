@@ -19,6 +19,7 @@ export async function getVariations() {
 export async function createVariation(name: string, options: string[]) {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error('Unauthorized');
+  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
 
   const result = await prisma.variationTemplate.create({
     data: {
@@ -36,6 +37,7 @@ export async function createVariation(name: string, options: string[]) {
 export async function deleteVariation(id: string) {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error('Unauthorized');
+  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
 
   const result = await prisma.variationTemplate.delete({
     where: { id }

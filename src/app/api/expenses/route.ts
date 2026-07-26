@@ -13,7 +13,8 @@ export async function GET() {
 
     const expenses = await prisma.expense.findMany({
       orderBy: { date: 'desc' },
-      include: { user: true }
+      include: { user: true },
+      take: 200
     });
     return NextResponse.json(expenses);
   } catch (err: unknown) {

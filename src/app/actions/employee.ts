@@ -9,16 +9,22 @@ export async function getEmployeeDashboardData(employeeId: string) {
   if (!session) throw new Error('Unauthorized');
 
   let user = await prisma.user.findUnique({
-    where: { id: employeeId }
+    where: { id: employeeId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    }
   });
 
   if (!user) {
-    // Fallback to mock data if the dummy user isn't in DB yet
+    // Fallback if user not found
     user = {
       id: employeeId,
-      name: 'Kwame Mensah',
-      email: 'cashier@frankoventures.com',
-      password: '',
+      name: 'Unknown Employee',
+      email: 'unknown@store.com',
       role: 'EMPLOYEE',
       createdAt: new Date(),
     };

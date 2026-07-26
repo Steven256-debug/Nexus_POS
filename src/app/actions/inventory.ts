@@ -14,7 +14,7 @@ export async function getProducts(options?: { take?: number; skip?: number; cate
       deletedAt: null,
       categoryId: options?.categoryId || undefined
     },
-    take: options?.take,
+    take: options?.take ?? 500,
     skip: options?.skip,
     include: {
       metadata: true,

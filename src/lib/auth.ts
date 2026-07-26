@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, resetRateLimit } from "@/lib/rate-limit";
 
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error(
@@ -21,6 +22,12 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
         }
+
+        // Rate limit by email to prevent brute-force
+        const rateCheck = checkRateLimit(credentials.email);
+        if (!rateCheck.allowed) {
+          throw new Error(`Too many login attempts. Try again in ${rateCheck.retryAfterSeconds}s`);
+        }
         
         const user = await prisma.user.findUnique({
           where: { email: credentials.email }
@@ -29,11 +36,18 @@ export const authOptions: NextAuthOptions = {
         if (!user || !user.password) {
           throw new Error("User not found");
         }
+
+        if (!user.isActive) {
+          throw new Error("Account disabled. Contact your administrator.");
+        }
         
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordValid) {
           throw new Error("Invalid password");
         }
+
+        // Successful login — reset rate limit
+        resetRateLimit(credentials.email);
         
         return {
           id: user.id,

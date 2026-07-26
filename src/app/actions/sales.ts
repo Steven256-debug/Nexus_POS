@@ -9,11 +9,10 @@ import { z } from 'zod';
 
 export async function processSale(data: z.infer<typeof saleInputSchema>) {
   const session = await getServerSession(authOptions);
-  const cashierId = session?.user?.id || (await prisma.user.findFirst())?.id;
-
-  if (!cashierId) {
-    throw new Error('No valid cashier found');
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized: You must be logged in to process a sale');
   }
+  const cashierId = session.user.id;
 
   // Validate inputs
   const validated = saleInputSchema.parse(data);
@@ -128,7 +127,7 @@ export async function getSales(options?: { take?: number; skip?: number }) {
   if (!session) throw new Error('Unauthorized');
 
   return await prisma.sale.findMany({
-    take: options?.take,
+    take: options?.take ?? 200,
     skip: options?.skip,
     include: {
       items: {
