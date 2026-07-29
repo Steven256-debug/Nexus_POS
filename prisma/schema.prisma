@@ -81,6 +81,7 @@ model Customer {
   creditLimit Float          @default(0) @map("credit_limit")
   sales       Sale[]
 
+  @@index([groupId])
   @@map("customers")
 }
 
@@ -132,6 +133,7 @@ model ProductMetadata {
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_metadata")
 }
 
@@ -176,6 +178,8 @@ model SaleItem {
   product     Product      @relation(fields: [productId], references: [id])
   returnItems ReturnItem[]
 
+  @@index([saleId])
+  @@index([productId])
   @@map("sale_items")
 }
 
@@ -189,6 +193,7 @@ model Payment {
 
   sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
+  @@index([saleId])
   @@map("payments")
 }
 
@@ -221,6 +226,7 @@ model VariationOption {
 
   template   VariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
+  @@index([templateId])
   @@map("variation_options")
 }
 
@@ -244,6 +250,8 @@ model Return {
   user      User     @relation(fields: [userId], references: [id])
   items     ReturnItem[]
 
+  @@index([saleId])
+  @@index([userId])
   @@map("returns")
 }
 
@@ -257,6 +265,8 @@ model ReturnItem {
   return      Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
   saleItem    SaleItem @relation(fields: [saleItemId], references: [id])
 
+  @@index([returnId])
+  @@index([saleItemId])
   @@map("return_items")
 }
 
@@ -271,5 +281,7 @@ model AuditLog {
 
   user      User?    @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([createdAt])
   @@map("audit_logs")
 }

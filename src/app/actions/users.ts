@@ -79,11 +79,13 @@ export async function updateUser(id: string, data: Partial<z.infer<typeof UserSc
   try {
     const admin = await requireAdmin();
 
-    let updateData: any = { ...data };
-    if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10);
-    } else {
-      delete updateData.password;
+    const parsed = UserSchema.partial().parse(data);
+    let updateData: Record<string, any> = {};
+    if (parsed.name !== undefined) updateData.name = parsed.name;
+    if (parsed.email !== undefined) updateData.email = parsed.email;
+    if (parsed.role !== undefined) updateData.role = parsed.role;
+    if (parsed.password) {
+      updateData.password = await bcrypt.hash(parsed.password, 10);
     }
 
     const user = await prisma.user.update({

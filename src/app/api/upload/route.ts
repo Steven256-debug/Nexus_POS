@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -39,28 +36,61 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Sanitize filename: strip path traversal, special chars, whitespace
+    // Sanitize filename
     const safeName = file.name
       .replace(/\.\./g, '')
       .replace(/[^a-zA-Z0-9._-]/g, '-')
       .replace(/--+/g, '-');
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const filename = uniqueSuffix + '-' + safeName;
-    
-    // Ensure public/uploads directory exists
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      mkdirSync(uploadDir, { recursive: true });
+
+    // Upload to Supabase Storage via REST API
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (supabaseUrl && supabaseKey) {
+      // Cloud mode: Upload to Supabase Storage
+      const storageUrl = `${supabaseUrl}/storage/v1/object/product-images/${filename}`;
+      const uploadRes = await fetch(storageUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': file.type,
+          'x-upsert': 'true',
+        },
+        body: buffer,
+      });
+
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        console.error('Supabase upload error:', errorText);
+        return NextResponse.json(
+          { success: false, error: 'Failed to upload image to storage' },
+          { status: 500 }
+        );
+      }
+
+      // Return the public URL
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/product-images/${filename}`;
+      return NextResponse.json({ success: true, url: publicUrl });
+    } else {
+      // Local fallback: write to disk (for local development only)
+      const { writeFile } = await import('fs/promises');
+      const { join } = await import('path');
+      const { existsSync, mkdirSync } = await import('fs');
+
+      const uploadDir = join(process.cwd(), 'public', 'uploads');
+      if (!existsSync(uploadDir)) {
+        mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const path = join(uploadDir, filename);
+      await writeFile(path, buffer);
+
+      return NextResponse.json({ success: true, url: `/uploads/${filename}` });
     }
-
-    // Write file to public/uploads
-    const path = join(uploadDir, filename);
-    await writeFile(path, buffer);
-
-    // Return the URL
-    return NextResponse.json({ success: true, url: `/uploads/${filename}` });
   } catch (error: any) {
     console.error('Error uploading file:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Upload failed' }, { status: 500 });
   }
 }

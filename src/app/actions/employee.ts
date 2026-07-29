@@ -33,9 +33,13 @@ export async function getEmployeeDashboardData(employeeId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Fetch sales for this employee
-  const sales = await prisma.sale.findMany({
-    where: { cashierId: employeeId },
+  // Fetch today's sales for this employee (stats)
+  const todaySales = await prisma.sale.findMany({
+    where: {
+      cashierId: employeeId,
+      createdAt: { gte: today },
+      status: 'COMPLETED'
+    },
     include: {
       items: {
         include: { product: true }
@@ -44,9 +48,20 @@ export async function getEmployeeDashboardData(employeeId: string) {
     orderBy: { createdAt: 'desc' }
   });
 
-  const todaySales = sales.filter(s => new Date(s.createdAt) >= today);
   const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0);
   const totalItemsSold = todaySales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + item.quantity, 0), 0);
+
+  // Fetch recent sales (limited to 10, any date) for activity feed
+  const recentSales = await prisma.sale.findMany({
+    where: { cashierId: employeeId },
+    include: {
+      items: {
+        include: { product: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 10
+  });
 
   return {
     user,
@@ -55,6 +70,6 @@ export async function getEmployeeDashboardData(employeeId: string) {
       todaySalesCount: todaySales.length,
       totalItemsSold
     },
-    recentSales: sales.slice(0, 10)
+    recentSales
   };
 }

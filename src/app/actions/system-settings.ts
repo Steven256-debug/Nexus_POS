@@ -31,7 +31,6 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
   revalidatePath('/settings');
   revalidatePath('/pos');
-  revalidatePath('/pos');
 }
 
 export async function clearTestData() {

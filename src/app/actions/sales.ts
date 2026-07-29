@@ -36,9 +36,24 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
       });
     }
 
-    // Generate unique invoice number INSIDE the transaction to prevent race conditions
-    const count = await tx.sale.count();
-    const invoiceNo = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+    // Generate unique invoice number using PostgreSQL advisory lock to prevent race conditions
+    // Advisory lock ensures only one transaction generates an invoice number at a time
+    await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock(1)`);
+    const lastSale = await tx.sale.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { invoiceNo: true }
+    });
+    const year = new Date().getFullYear();
+    let nextNum = 1;
+    if (lastSale?.invoiceNo) {
+      const parts = lastSale.invoiceNo.split('-');
+      const lastYear = parseInt(parts[1]);
+      const lastNum = parseInt(parts[2]);
+      if (lastYear === year) {
+        nextNum = lastNum + 1;
+      }
+    }
+    const invoiceNo = `INV-${year}-${String(nextNum).padStart(4, '0')}`;
 
     // If completed sale, check and deduct stock, capture cost price
     const itemsWithCost = [];
@@ -78,6 +93,13 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
       }
     }
 
+    // Calculate paidAmount and changeAmount from payments
+    const paidAmount = validated.payments
+      ? validated.payments.reduce((sum, p) => sum + p.amount, 0)
+      : 0;
+    const netAmount = totalAmount - validated.discountAmount + validated.taxAmount;
+    const changeAmount = Math.max(0, paidAmount - netAmount);
+
     // Create Sale record
     return await tx.sale.create({
       data: {
@@ -89,6 +111,8 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
         totalAmount,
         discountAmount: validated.discountAmount,
         taxAmount: validated.taxAmount,
+        paidAmount,
+        changeAmount,
         note: validated.note || null,
         items: {
           create: itemsWithCost.map(item => ({

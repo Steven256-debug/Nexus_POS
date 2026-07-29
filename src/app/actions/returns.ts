@@ -42,11 +42,20 @@ export async function processReturn({
       for (const input of items) {
         const saleItem = sale.items.find((i) => i.id === input.saleItemId);
         if (!saleItem) throw new Error(`Sale item ${input.saleItemId} not found on this sale`);
-        if (input.quantity > saleItem.quantity) throw new Error(`Cannot return more than purchased for item ${saleItem.id}`);
 
-        // Currently we do not check if it was already returned previously in another return,
-        // for a robust system we'd check sum of previous returns for this saleItem.
-        // For Phase 4, we assume a simple return model.
+        // Check how many units of this item have already been returned
+        const previousReturns = await tx.returnItem.aggregate({
+          _sum: { quantity: true },
+          where: { saleItemId: input.saleItemId }
+        });
+        const alreadyReturned = previousReturns._sum.quantity ?? 0;
+        const remainingReturnable = saleItem.quantity - alreadyReturned;
+
+        if (input.quantity > remainingReturnable) {
+          throw new Error(
+            `Cannot return ${input.quantity} unit(s) — only ${remainingReturnable} remaining (${alreadyReturned} already returned)`
+          );
+        }
 
         totalRefundAmount += saleItem.priceAtSale * input.quantity;
 
