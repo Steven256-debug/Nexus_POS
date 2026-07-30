@@ -1,10 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { logAction } from '@/lib/audit';
+import { requireAuth, requireAdmin, type ActionResult, ok, err } from '@/lib/action-utils';
 
 export async function getSetting(key: string): Promise<string | null> {
   const setting = await prisma.setting.findUnique({ where: { key } });
@@ -19,9 +18,7 @@ export async function getSettings(): Promise<Record<string, string>> {
 }
 
 export async function setSetting(key: string, value: string): Promise<void> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  await requireAdmin();
 
   await prisma.setting.upsert({
     where: { key },
@@ -33,33 +30,54 @@ export async function setSetting(key: string, value: string): Promise<void> {
   revalidatePath('/pos');
 }
 
-export async function clearTestData() {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+/**
+ * Clears all transactional test data.
+ * Requires explicit confirmation string to prevent accidental invocation.
+ */
+export async function clearTestData(
+  confirmationPhrase: string
+): Promise<ActionResult> {
+  try {
+    const admin = await requireAdmin();
 
-  await prisma.$transaction([
-    prisma.payment.deleteMany(),
-    prisma.returnItem.deleteMany(),
-    prisma.return.deleteMany(),
-    prisma.saleItem.deleteMany(),
-    prisma.sale.deleteMany(),
-    prisma.expense.deleteMany(),
-    prisma.auditLog.deleteMany(),
-  ]);
+    // Safety: require an exact confirmation phrase
+    if (confirmationPhrase !== 'DELETE ALL TRANSACTIONS') {
+      return err('Confirmation phrase does not match. Expected: "DELETE ALL TRANSACTIONS"');
+    }
 
-  await logAction({
-    userId: session.user.id,
-    action: 'CLEAR_TEST_DATA',
-    entity: 'System',
-    details: 'Cleared all transactions (sales, returns, expenses, payments, audit logs)',
-  });
+    // Log BEFORE clearing, so the audit trail survives even if audit logs are cleared
+    await logAction({
+      userId: admin.id,
+      action: 'CLEAR_TEST_DATA_INITIATED',
+      entity: 'System',
+      details: `Admin ${admin.email} initiated full transaction data wipe`,
+    });
 
-  revalidatePath('/sales');
-  revalidatePath('/pos');
-  revalidatePath('/reports');
-  revalidatePath('/expenses');
-  revalidatePath('/audit-logs');
-  
-  return { success: true };
+    await prisma.$transaction([
+      prisma.payment.deleteMany(),
+      prisma.returnItem.deleteMany(),
+      prisma.return.deleteMany(),
+      prisma.saleItem.deleteMany(),
+      prisma.sale.deleteMany(),
+      prisma.expense.deleteMany(),
+      // NOTE: Audit logs are intentionally NOT deleted — they are the permanent record
+    ]);
+
+    await logAction({
+      userId: admin.id,
+      action: 'CLEAR_TEST_DATA_COMPLETED',
+      entity: 'System',
+      details: 'Cleared all transactions (sales, returns, expenses, payments). Audit logs preserved.',
+    });
+
+    revalidatePath('/sales');
+    revalidatePath('/pos');
+    revalidatePath('/reports');
+    revalidatePath('/expenses');
+
+    return ok(undefined);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(message);
+  }
 }

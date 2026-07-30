@@ -29,12 +29,13 @@ import {
 import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
 import { ThemeToggle } from './theme-toggle';
+import type { LucideIcon } from 'lucide-react';
 
 interface NavGroup {
   label: string;
-  icon: any;
+  icon: LucideIcon;
   href?: string;
-  subItems?: { label: string; href: string; icon?: any }[];
+  subItems?: { label: string; href: string; icon?: LucideIcon }[];
 }
 
 export function Navigation() {

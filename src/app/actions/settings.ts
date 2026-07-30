@@ -2,14 +2,11 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth, requireAdmin } from '@/lib/action-utils';
 import { businessLocationSchema } from '@/lib/validators';
 
 export async function updateBusinessLocation(id: string | undefined, data: { name: string; code: string; address: string }) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  await requireAdmin();
 
   // Validate inputs
   const validated = businessLocationSchema.parse(data);
@@ -26,4 +23,12 @@ export async function updateBusinessLocation(id: string | undefined, data: { nam
   }
 
   revalidatePath('/settings');
+}
+
+export async function getBusinessLocation() {
+  await requireAuth();
+
+  return await prisma.businessLocation.findFirst({
+    orderBy: { name: 'asc' }
+  });
 }

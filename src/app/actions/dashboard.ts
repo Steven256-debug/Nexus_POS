@@ -1,12 +1,16 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/action-utils';
+import type { DashboardMetrics, DailyTrendData, CategoryDistribution } from '@/types';
 
-export async function getDashboardMetrics() {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+const CHART_COLORS = [
+  '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
+];
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  await requireAuth();
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -33,8 +37,8 @@ export async function getDashboardMetrics() {
     }
   });
 
-  const todayRevenue = todaySalesAgg._sum.totalAmount ?? 0;
-  const yesterdayRevenue = yesterdaySalesAgg._sum.totalAmount ?? 0;
+  const todayRevenue = Number(todaySalesAgg._sum.totalAmount ?? 0);
+  const yesterdayRevenue = Number(yesterdaySalesAgg._sum.totalAmount ?? 0);
   const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
   // 3. Low Stock Items Count & Product Health Counts (DB Aggregation)
@@ -47,57 +51,82 @@ export async function getDashboardMetrics() {
       deletedAt: null,
       stockQuantity: { lte: prisma.product.fields.minStockAlert }
     },
-    include: { category: true },
+    include: { category: true, brand: true, unit: true, metadata: true },
     take: 10
   });
 
-  // 4. 30-Day Sales & Real Profit Trend Data
+  // 4. 30-Day Sales Trend — Aggregated via raw SQL to avoid loading all records
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const startDate = thirtyDaysAgo;
+  const endDate = new Date();
 
-  const salesLast30Days = await prisma.sale.findMany({
-    where: {
-      status: 'COMPLETED',
-      createdAt: { gte: thirtyDaysAgo }
-    },
-    include: {
-      items: true
-    },
-    orderBy: { createdAt: 'asc' }
+  type DayAgg = { day: Date; revenue: number; cogs: number };
+  const dailyAgg = await prisma.$queryRaw<DayAgg[]>`
+    SELECT
+      DATE("sales"."createdAt") as day,
+      COALESCE(SUM("sales"."total_amount"), 0)::float as revenue,
+      COALESCE(SUM("sale_items"."cost_at_sale" * "sale_items"."quantity"), 0)::float as cogs
+    FROM "sales"
+    LEFT JOIN "sale_items" ON "sale_items"."sale_id_fk" = "sales"."id"
+    WHERE "sales"."status" = 'COMPLETED'::"SaleStatus"
+      AND "sales"."createdAt" >= ${startDate}
+      AND "sales"."createdAt" <= ${endDate}
+    GROUP BY DATE("sales"."createdAt")
+    ORDER BY day ASC
+  `;
+
+  // Build map from raw results, then fill 30-day range
+  const aggMap = new Map<string, { sales: number; cogs: number }>();
+  dailyAgg.forEach(row => {
+    const dStr = new Date(row.day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    aggMap.set(dStr, { sales: Number(row.revenue), cogs: Number(row.cogs) });
   });
 
-  // Aggregate by day
-  const salesByDayMap = new Map<string, { sales: number; cogs: number }>();
-
-  // Pre-fill 30 days
+  const days30: DailyTrendData[] = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    salesByDayMap.set(dStr, { sales: 0, cogs: 0 });
+    const data = aggMap.get(dStr) || { sales: 0, cogs: 0 };
+    days30.push({
+      date: dStr,
+      sales: data.sales,
+      profit: data.sales - data.cogs,
+    });
   }
 
-  salesLast30Days.forEach(sale => {
-    const dStr = new Date(sale.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const existing = salesByDayMap.get(dStr) || { sales: 0, cogs: 0 };
-    
-    const saleCOGS = sale.items.reduce((sum, item) => sum + (item.costAtSale * item.quantity), 0);
-    salesByDayMap.set(dStr, {
-      sales: existing.sales + sale.totalAmount,
-      cogs: existing.cogs + saleCOGS
-    });
+  // 5. Real Category Distribution from DB (replaces hardcoded dummy data)
+  const categoryGroups = await prisma.product.groupBy({
+    by: ['categoryId'],
+    _count: { id: true },
+    where: { deletedAt: null },
   });
 
-  const days30 = Array.from(salesByDayMap.entries()).map(([date, data]) => ({
-    date,
-    sales: data.sales,
-    profit: data.sales - data.cogs
+  const categoryIds = categoryGroups
+    .filter(g => g.categoryId !== null)
+    .map(g => g.categoryId as string);
+
+  const categories = categoryIds.length > 0
+    ? await prisma.category.findMany({ where: { id: { in: categoryIds } } })
+    : [];
+
+  const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+
+  const categoryDistribution: CategoryDistribution[] = categoryGroups.map((g, i) => ({
+    name: g.categoryId ? (categoryMap.get(g.categoryId) || 'Unknown') : 'Uncategorized',
+    value: g._count.id,
+    color: CHART_COLORS[i % CHART_COLORS.length],
   }));
 
-  // 5. Recent Sales for Activity Feed (Limit 5)
+  // 6. Recent Sales for Activity Feed (Limit 5)
   const recentSales = await prisma.sale.findMany({
     where: { status: 'COMPLETED' },
-    include: { cashier: true, items: true },
+    include: {
+      cashier: true,
+      customer: true,
+      items: { include: { product: true } },
+    },
     orderBy: { createdAt: 'desc' },
     take: 5
   });
@@ -108,8 +137,9 @@ export async function getDashboardMetrics() {
     revenueGrowth,
     totalProducts,
     lowStockCount: lowStockProducts.length,
-    lowStockProducts,
+    lowStockProducts: lowStockProducts as any,
     days30,
-    recentSales
+    recentSales: recentSales as any,
+    categoryDistribution,
   };
 }

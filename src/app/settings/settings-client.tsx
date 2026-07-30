@@ -62,8 +62,8 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
     
     setIsClearing(true);
     try {
-      const res = await clearTestData();
-      if (res.error) {
+      const res = await clearTestData('DELETE ALL TRANSACTIONS');
+      if (!res.success) {
         toast.error(res.error);
       } else {
         toast.success('All transaction data cleared successfully');

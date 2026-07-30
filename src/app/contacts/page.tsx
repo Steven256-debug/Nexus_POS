@@ -90,10 +90,10 @@ export default async function ContactsPage() {
                   </td>
                   <td className="p-4">
                     <span className="px-3 py-1 rounded-lg bg-blue-500/10 text-blue-600 font-bold text-xs">
-                      {c.group?.name || 'Retail'} ({c.group?.discount || 0}% Off)
+                      {c.group?.name || 'Retail'} ({Number(c.group?.discount || 0)}% Off)
                     </span>
                   </td>
-                  <td className="p-4 text-right font-black text-emerald-600">GH₵{c.creditLimit.toFixed(2)}</td>
+                  <td className="p-4 text-right font-black text-emerald-600">GH₵{Number(c.creditLimit).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>

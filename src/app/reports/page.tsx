@@ -10,13 +10,13 @@ export default async function ReportsPage() {
   });
   const expenses = await prisma.expense.findMany();
 
-  const totalRevenue = sales.reduce((acc, s) => acc + s.totalAmount, 0);
-  const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
+  const totalRevenue = sales.reduce((acc, s) => acc + Number(s.totalAmount), 0);
+  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
 
   // Calculate real COGS from costAtSale or product.costPrice
   const totalCOGS = sales.reduce((acc, s) => {
     return acc + s.items.reduce((itemAcc: number, item: any) => {
-      const costAtSale = item.costAtSale ?? (item.product?.costPrice ?? 0);
+      const costAtSale = Number(item.costAtSale ?? (item.product?.costPrice ?? 0));
       return itemAcc + (costAtSale * item.quantity);
     }, 0);
   }, 0);
@@ -32,7 +32,7 @@ export default async function ReportsPage() {
       if (prod) {
         const existing = productSalesMap.get(prod.id) || { name: prod.name, quantity: 0, revenue: 0 };
         existing.quantity += item.quantity;
-        existing.revenue += (item.quantity * item.priceAtSale);
+        existing.revenue += (item.quantity * Number(item.priceAtSale));
         productSalesMap.set(prod.id, existing);
       }
     });

@@ -1,4 +1,5 @@
 import { getDashboardMetrics } from '@/app/actions/dashboard';
+import { getBusinessLocation } from '@/app/actions/settings';
 import { Package, TrendingUp, DollarSign, Activity, AlertTriangle, ArrowRight, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { AutoSizeText } from '@/components/auto-size-text';
@@ -12,6 +13,11 @@ export default async function Dashboard() {
   const session = await getServerSession(authOptions);
   const userName = session?.user?.name || session?.user?.email || 'User';
 
+  const [metrics, location] = await Promise.all([
+    getDashboardMetrics(),
+    getBusinessLocation(),
+  ]);
+
   const {
     todayRevenue,
     todaySalesCount,
@@ -20,15 +26,12 @@ export default async function Dashboard() {
     lowStockCount,
     lowStockProducts,
     days30,
-    recentSales
-  } = await getDashboardMetrics();
+    recentSales,
+    categoryDistribution,
+  } = metrics;
 
-  // Category dummy distribution for chart display
-  const categoryData = [
-    { name: 'Aluzinc Sheets', value: 45, color: '#2563eb' },
-    { name: 'Anti-Rust Sheets', value: 30, color: '#10b981' },
-    { name: 'Roofing Accessories', value: 25, color: '#f59e0b' },
-  ];
+  const branchName = location ? `${location.name}` : 'POS System';
+  const branchCode = location?.code || 'BL0001';
 
   return (
     <div className="relative min-h-full">
@@ -40,7 +43,7 @@ export default async function Dashboard() {
           <div className="space-y-2 z-10">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 text-white text-xs font-semibold backdrop-blur-md border border-white/20">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Branch: FRANCIS AMOAKO VENTURES (BL0001)
+              Branch: {branchName} ({branchCode})
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight flex items-center gap-3">
               Welcome {userName}, 👋
@@ -65,11 +68,11 @@ export default async function Dashboard() {
                 <DollarSign className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">Today's Revenue</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">Today&apos;s Revenue</p>
                 <AutoSizeText className="text-xl xl:text-2xl font-black text-foreground">GH₵{todayRevenue.toFixed(2)}</AutoSizeText>
               </div>
             </div>
-            <div className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+            <div className={`text-xs font-bold flex items-center gap-1 ${revenueGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
               <TrendingUp className="w-4 h-4" /> {revenueGrowth >= 0 ? '+' : ''}{revenueGrowth.toFixed(1)}% from yesterday
             </div>
           </div>
@@ -80,7 +83,7 @@ export default async function Dashboard() {
                 <Activity className="w-6 h-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">Today's Transactions</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">Today&apos;s Transactions</p>
                 <AutoSizeText className="text-xl xl:text-2xl font-black text-foreground">{todaySalesCount}</AutoSizeText>
               </div>
             </div>
@@ -121,7 +124,7 @@ export default async function Dashboard() {
         </div>
 
         {/* Modern Interactive Charts Section */}
-        <DashboardCharts salesData={days30} categoryData={categoryData} />
+        <DashboardCharts salesData={days30} categoryData={categoryDistribution} />
 
         {/* Recent Transactions & Stock Alerts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -138,7 +141,7 @@ export default async function Dashboard() {
                     <p className="font-bold text-sm text-foreground">Invoice #{sale.invoiceNo || sale.id.slice(0, 8).toUpperCase()}</p>
                     <p className="text-xs text-muted-foreground">{new Date(sale.createdAt).toLocaleTimeString()} • {sale.paymentMethod}</p>
                   </div>
-                  <span className="font-black text-base text-blue-600 dark:text-blue-400">GH₵{sale.totalAmount.toFixed(2)}</span>
+                  <span className="font-black text-base text-blue-600 dark:text-blue-400">GH₵{Number(sale.totalAmount).toFixed(2)}</span>
                 </div>
               ))}
               {recentSales.length === 0 && (

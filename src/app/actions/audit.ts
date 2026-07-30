@@ -1,18 +1,19 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/action-utils';
 
-export async function getAuditLogs(options?: { take?: number; skip?: number }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
+export async function getAuditLogs(options?: {
+  take?: number;
+  skip?: number;
+  cursor?: string;
+}) {
+  await requireAdmin();
 
   return await prisma.auditLog.findMany({
     take: options?.take || 100,
-    skip: options?.skip || 0,
+    skip: options?.skip,
+    ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
     orderBy: { createdAt: 'desc' },
     include: {
       user: {

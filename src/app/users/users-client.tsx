@@ -66,7 +66,7 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
       res = await createUser(dataToSubmit);
     }
 
-    if (res.error) {
+    if (!res.success) {
       toast.error(res.error);
     } else {
       toast.success(`User ${formData.id ? 'updated' : 'created'} successfully!`);
@@ -81,7 +81,7 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     const res = await toggleUserStatus(id, !currentStatus);
-    if (res.error) {
+    if (!res.success) {
       toast.error(res.error);
     } else {
       toast.success(`User ${!currentStatus ? 'activated' : 'disabled'}!`);

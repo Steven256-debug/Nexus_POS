@@ -1,10 +1,12 @@
 /**
- * Simple in-memory rate limiter for login attempts.
- * Limits to MAX_ATTEMPTS per windowMs per IP address.
+ * Production-ready rate limiter for login attempts.
+ * Uses LRU-style Map with automatic expiry — no setInterval, no memory leak.
+ * Keys by identifier (email or IP) with configurable limits.
  */
 
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_ENTRIES = 10000; // LRU cap to prevent unbounded growth
 
 interface AttemptRecord {
   count: number;
@@ -13,28 +15,50 @@ interface AttemptRecord {
 
 const attempts = new Map<string, AttemptRecord>();
 
-// Clean up old entries every 5 minutes to prevent memory leak
-setInterval(() => {
+/**
+ * Evicts expired entries and enforces the LRU cap.
+ * Called lazily on each check — no background interval needed.
+ */
+function evictStale(): void {
   const now = Date.now();
-  for (const [key, record] of attempts) {
+
+  // Evict expired entries
+  for (const [key, record] of Array.from(attempts.entries())) {
     if (now - record.firstAttempt > WINDOW_MS) {
       attempts.delete(key);
     }
   }
-}, 5 * 60 * 1000);
 
-export function checkRateLimit(ip: string): { allowed: boolean; retryAfterSeconds?: number } {
+  // If still over capacity, evict oldest entries (Map preserves insertion order)
+  if (attempts.size > MAX_ENTRIES) {
+    const excess = attempts.size - MAX_ENTRIES;
+    let removed = 0;
+    for (const key of Array.from(attempts.keys())) {
+      if (removed >= excess) break;
+      attempts.delete(key);
+      removed++;
+    }
+  }
+}
+
+/**
+ * Check if the given identifier is rate-limited.
+ * @param identifier — email address, IP, or combined key
+ */
+export function checkRateLimit(identifier: string): { allowed: boolean; retryAfterSeconds?: number } {
+  evictStale();
+
   const now = Date.now();
-  const record = attempts.get(ip);
+  const record = attempts.get(identifier);
 
   if (!record) {
-    attempts.set(ip, { count: 1, firstAttempt: now });
+    attempts.set(identifier, { count: 1, firstAttempt: now });
     return { allowed: true };
   }
 
   // If the window has expired, reset
   if (now - record.firstAttempt > WINDOW_MS) {
-    attempts.set(ip, { count: 1, firstAttempt: now });
+    attempts.set(identifier, { count: 1, firstAttempt: now });
     return { allowed: true };
   }
 
@@ -49,6 +73,23 @@ export function checkRateLimit(ip: string): { allowed: boolean; retryAfterSecond
   return { allowed: true };
 }
 
-export function resetRateLimit(ip: string): void {
-  attempts.delete(ip);
+/**
+ * Reset rate limit for an identifier (called on successful login).
+ */
+export function resetRateLimit(identifier: string): void {
+  attempts.delete(identifier);
+}
+
+/**
+ * Get current attempt count for testing purposes.
+ */
+export function _getAttemptCount(identifier: string): number {
+  return attempts.get(identifier)?.count ?? 0;
+}
+
+/**
+ * Clear all rate limit state (for testing).
+ */
+export function _clearAll(): void {
+  attempts.clear();
 }

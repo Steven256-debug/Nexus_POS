@@ -2,20 +2,42 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { productInputSchema, metadataItemSchema } from '@/lib/validators';
 import { z } from 'zod';
 import { logAction } from '@/lib/audit';
+import { requireAuth, requireAdmin } from '@/lib/action-utils';
+import { Prisma } from '@prisma/client';
 
-export async function getProducts(options?: { take?: number; skip?: number; categoryId?: string }) {
+export async function getProducts(options?: {
+  take?: number;
+  skip?: number;
+  cursor?: string;
+  categoryId?: string;
+  search?: string;
+}) {
+  await requireAuth();
+
+  const where: Prisma.ProductWhereInput = {
+    deletedAt: null,
+  };
+
+  if (options?.categoryId) {
+    where.categoryId = options.categoryId;
+  }
+
+  if (options?.search) {
+    where.OR = [
+      { name: { contains: options.search, mode: 'insensitive' } },
+      { sku: { contains: options.search, mode: 'insensitive' } },
+      { barcode: { contains: options.search, mode: 'insensitive' } },
+    ];
+  }
+
   return await prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      categoryId: options?.categoryId || undefined
-    },
-    take: options?.take ?? 500,
+    where,
+    take: options?.take ?? 100,
     skip: options?.skip,
+    ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
     include: {
       metadata: true,
       category: true,
@@ -29,6 +51,8 @@ export async function getProducts(options?: { take?: number; skip?: number; cate
 }
 
 export async function getProduct(id: string) {
+  await requireAuth();
+
   return await prisma.product.findUnique({
     where: { id },
     include: {
@@ -44,9 +68,7 @@ export async function createProduct(
   data: z.infer<typeof productInputSchema>,
   metadata: { key: string; value: string }[]
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  await requireAdmin();
 
   // Validate inputs
   const validated = productInputSchema.parse(data);
@@ -81,9 +103,7 @@ export async function updateProduct(
   data: z.infer<typeof productInputSchema>,
   metadata: { key: string; value: string }[]
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  await requireAdmin();
 
   // Validate inputs
   const validated = productInputSchema.parse(data);
@@ -116,9 +136,7 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  const admin = await requireAdmin();
 
   // Soft delete: set deletedAt instead of hard deleting
   const result = await prisma.product.update({
@@ -127,7 +145,7 @@ export async function deleteProduct(id: string) {
   });
   
   await logAction({
-    userId: session.user.id,
+    userId: admin.id,
     action: 'DELETE_PRODUCT',
     entity: 'Product',
     entityId: id,
@@ -140,9 +158,7 @@ export async function deleteProduct(id: string) {
 }
 
 export async function importProductsBatch(products: z.infer<typeof productInputSchema>[]) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
-  if (session.user.role !== 'ADMIN') throw new Error('Forbidden: Admins only');
+  await requireAdmin();
 
   // Validate each product
   const validated = products.map(p => productInputSchema.parse(p));
@@ -173,8 +189,7 @@ export async function getCategories() {
 }
 
 export async function createCategory(name: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+  await requireAuth();
 
   if (!name || name.trim().length === 0) {
     throw new Error('Category name is required');
@@ -190,8 +205,7 @@ export async function createCategory(name: string) {
 }
 
 export async function deleteCategory(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+  await requireAdmin();
 
   const result = await prisma.category.delete({
     where: { id }
@@ -210,8 +224,7 @@ export async function getUnits() {
 }
 
 export async function createUnit(name: string, shortName: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+  await requireAuth();
 
   if (!name || !shortName) {
     throw new Error('Unit name and short name are required');
@@ -227,8 +240,7 @@ export async function createUnit(name: string, shortName: string) {
 }
 
 export async function deleteUnit(id: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+  await requireAdmin();
 
   const result = await prisma.unit.delete({
     where: { id }

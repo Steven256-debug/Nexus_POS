@@ -82,7 +82,7 @@ export function ReturnModal({ sale }: { sale: Sale }) {
       })),
     });
 
-    if (res.error) {
+    if (!res.success) {
       toast.error(res.error);
     } else {
       toast.success('Return processed successfully!');

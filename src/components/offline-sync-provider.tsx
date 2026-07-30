@@ -5,9 +5,11 @@ import { initOfflineSyncListeners, syncOfflineSales } from '@/lib/offline-sync';
 
 export function OfflineSyncProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Initialize online/offline event listeners
     initOfflineSyncListeners();
-    // Attempt initial sync on load if online
-    if (navigator.onLine) {
+
+    // Attempt to sync any pending offline sales on mount
+    if (typeof window !== 'undefined' && navigator.onLine) {
       syncOfflineSales();
     }
   }, []);

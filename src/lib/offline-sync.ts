@@ -1,6 +1,6 @@
 'use client';
 
-import { getPendingSales, markSaleSynced } from './offline-db';
+import { getPendingSales, markSaleSynced, markSaleFailed } from './offline-db';
 import { processSale } from '@/app/actions/sales';
 import { toast } from 'sonner';
 
@@ -25,11 +25,14 @@ export async function syncOfflineSales(): Promise<number> {
 
     for (const saleItem of pending) {
       try {
-        await processSale(saleItem.saleInput);
+        await processSale(saleItem.saleInput as any);
         await markSaleSynced(saleItem.id);
         count++;
       } catch (err) {
-        console.error('Error syncing individual sale:', err);
+        const message = err instanceof Error ? err.message : 'Unknown sync error';
+        console.error(`Error syncing sale ${saleItem.id}:`, message);
+        // Mark as failed instead of silently skipping — prevents duplicate retries
+        await markSaleFailed(saleItem.id, message);
       }
     }
 

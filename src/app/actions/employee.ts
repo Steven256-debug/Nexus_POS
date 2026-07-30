@@ -1,12 +1,15 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireAuth } from '@/lib/action-utils';
 
 export async function getEmployeeDashboardData(employeeId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error('Unauthorized');
+  const sessionUser = await requireAuth();
+
+  // IDOR protection: employees can only view their own data, admins can view anyone's
+  if (sessionUser.role === 'EMPLOYEE' && sessionUser.id !== employeeId) {
+    throw new Error('Forbidden: You can only view your own dashboard');
+  }
 
   let user = await prisma.user.findUnique({
     where: { id: employeeId },
@@ -48,7 +51,7 @@ export async function getEmployeeDashboardData(employeeId: string) {
     orderBy: { createdAt: 'desc' }
   });
 
-  const todayRevenue = todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const todayRevenue = todaySales.reduce((sum, sale) => sum + Number(sale.totalAmount), 0);
   const totalItemsSold = todaySales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + item.quantity, 0), 0);
 
   // Fetch recent sales (limited to 10, any date) for activity feed

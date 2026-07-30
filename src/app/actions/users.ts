@@ -3,27 +3,14 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
-import { z } from 'zod';
+import { userInputSchema } from '@/lib/validators';
 import { logAction } from '@/lib/audit';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-
-const UserSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE']),
-});
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== 'ADMIN') {
-    throw new Error('Unauthorized');
-  }
-  return session.user;
-}
+import { requireAdmin, type ActionResult, ok, err } from '@/lib/action-utils';
+import { z } from 'zod';
 
 export async function getUsers() {
+  await requireAdmin();
+
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
@@ -38,15 +25,15 @@ export async function getUsers() {
   return users;
 }
 
-export async function createUser(data: z.infer<typeof UserSchema>) {
+export async function createUser(data: z.infer<typeof userInputSchema>): Promise<ActionResult> {
   try {
     const admin = await requireAdmin();
 
-    const parsed = UserSchema.parse(data);
-    if (!parsed.password) throw new Error('Password is required for new users');
+    const parsed = userInputSchema.parse(data);
+    if (!parsed.password) return err('Password is required for new users');
 
     const existing = await prisma.user.findUnique({ where: { email: parsed.email } });
-    if (existing) return { error: 'Email already exists' };
+    if (existing) return err('Email already exists');
 
     const hashedPassword = await bcrypt.hash(parsed.password, 10);
 
@@ -69,18 +56,22 @@ export async function createUser(data: z.infer<typeof UserSchema>) {
     });
 
     revalidatePath('/users');
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
+    return ok(undefined);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(message);
   }
 }
 
-export async function updateUser(id: string, data: Partial<z.infer<typeof UserSchema>>) {
+export async function updateUser(
+  id: string,
+  data: Partial<z.infer<typeof userInputSchema>>
+): Promise<ActionResult> {
   try {
     const admin = await requireAdmin();
 
-    const parsed = UserSchema.partial().parse(data);
-    let updateData: Record<string, any> = {};
+    const parsed = userInputSchema.partial().parse(data);
+    const updateData: Record<string, string> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
     if (parsed.email !== undefined) updateData.email = parsed.email;
     if (parsed.role !== undefined) updateData.role = parsed.role;
@@ -102,13 +93,14 @@ export async function updateUser(id: string, data: Partial<z.infer<typeof UserSc
     });
 
     revalidatePath('/users');
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
+    return ok(undefined);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(message);
   }
 }
 
-export async function toggleUserStatus(id: string, isActive: boolean) {
+export async function toggleUserStatus(id: string, isActive: boolean): Promise<ActionResult> {
   try {
     const admin = await requireAdmin();
 
@@ -126,8 +118,9 @@ export async function toggleUserStatus(id: string, isActive: boolean) {
     });
 
     revalidatePath('/users');
-    return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
+    return ok(undefined);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return err(message);
   }
 }

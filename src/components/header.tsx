@@ -146,7 +146,7 @@ export function TopHeader() {
         <div className="flex items-center gap-4 flex-1 max-w-xl">
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold text-xs border border-blue-500/20 whitespace-nowrap">
             <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>BL0001 - FRANCIS AMOAKO VENTURES</span>
+            <span>POS Terminal</span>
           </div>
 
           <div 

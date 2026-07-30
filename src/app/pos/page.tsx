@@ -2,6 +2,7 @@ import { getProducts } from '@/app/actions/inventory';
 import { prisma } from '@/lib/prisma';
 import { getSetting } from '@/app/actions/system-settings';
 import PosClient from './pos-client';
+import type { CartItem } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export default async function PosPage({ searchParams }: PageProps) {
   const taxRate = taxRateStr ? parseFloat(taxRateStr) / 100 : 0.15;
   
   let resumedSaleId: string | null = null;
-  let initialCart: any[] = [];
+  let initialCart: CartItem[] = [];
 
   if (resume) {
     const sale = await prisma.sale.findUnique({
@@ -43,7 +44,7 @@ export default async function PosPage({ searchParams }: PageProps) {
         name: item.product.name,
         sku: item.product.sku,
         unit: item.product.unit?.shortName || 'Pc(s)',
-        price: item.priceAtSale,
+        price: Number(item.priceAtSale),
         quantity: item.quantity,
         maxStock: item.product.stockQuantity
       }));

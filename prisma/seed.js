@@ -22,6 +22,9 @@ async function main() {
   await prisma.category.deleteMany({});
   await prisma.brand.deleteMany({});
   await prisma.unit.deleteMany({});
+  await prisma.variationOption.deleteMany({});
+  await prisma.variationTemplate.deleteMany({});
+  await prisma.setting.deleteMany({});
   await prisma.businessLocation.deleteMany({});
   await prisma.user.deleteMany({});
 
@@ -32,6 +35,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'admin@store.com',
+      name: 'Admin',
       password: adminPassword,
       role: 'ADMIN',
     },
@@ -41,6 +45,7 @@ async function main() {
   const cashier = await prisma.user.create({
     data: {
       email: 'cashier@store.com',
+      name: 'Cashier',
       password: employeePassword,
       role: 'EMPLOYEE',
     },
@@ -66,7 +71,20 @@ async function main() {
     ],
   });
 
-  console.log('Database wiped completely clean! Ready for live store data entry.');
+  // 5. Create Default System Settings
+  await prisma.setting.createMany({
+    data: [
+      { key: 'tax_rate', value: '15' },
+      { key: 'currency', value: 'GH₵' },
+      { key: 'invoice_prefix', value: 'INV' },
+      { key: 'business_name', value: 'Francis Amoako Ventures' },
+    ],
+  });
+
+  console.log('Database initialized successfully!');
+  console.log('Default settings: tax_rate=15%, currency=GH₵');
+  console.log('Admin: admin@store.com / admin123');
+  console.log('Cashier: cashier@store.com / employee123');
 }
 
 main()

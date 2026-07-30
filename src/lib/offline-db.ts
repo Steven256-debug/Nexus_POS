@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'NexusPOS_OfflineDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Bumped for idempotencyKey field
 
 export interface OfflineProduct {
   id: string;
@@ -17,9 +17,22 @@ export interface OfflineProduct {
   unit?: string | null;
 }
 
+export interface OfflineSaleInput {
+  paymentMethod: string;
+  status: string;
+  items: { productId: string; quantity: number; priceAtSale: number }[];
+  payments?: { method: string; amount: number }[];
+  customerId?: string | null;
+  note?: string | null;
+  resumedSaleId?: string;
+  discountAmount: number;
+  taxAmount: number;
+}
+
 export interface OfflineSale {
   id: string;
-  saleInput: any;
+  idempotencyKey: string;
+  saleInput: OfflineSaleInput;
   createdAt: string;
   synced: number; // 0 = false, 1 = true
 }
@@ -42,6 +55,7 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('pendingSales')) {
         const saleStore = db.createObjectStore('pendingSales', { keyPath: 'id' });
         saleStore.createIndex('synced', 'synced', { unique: false });
+        saleStore.createIndex('idempotencyKey', 'idempotencyKey', { unique: true });
       }
     };
 
@@ -65,7 +79,7 @@ export async function saveLocalProducts(products: OfflineProduct[]): Promise<voi
         pricePerUnit: p.pricePerUnit,
         stockQuantity: p.stockQuantity,
         minStockAlert: p.minStockAlert,
-        category: typeof p.category === 'object' ? (p.category as any)?.name : p.category,
+        category: (p.category as unknown as { name?: string })?.name ?? (typeof p.category === 'string' ? p.category : undefined),
       });
     });
 
@@ -133,6 +147,27 @@ export async function markSaleSynced(id: string): Promise<void> {
   const tx = db.transaction('pendingSales', 'readwrite');
   const store = tx.objectStore('pendingSales');
   store.delete(id);
+
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function markSaleFailed(id: string, error: string): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction('pendingSales', 'readwrite');
+  const store = tx.objectStore('pendingSales');
+
+  const getReq = store.get(id);
+  getReq.onsuccess = () => {
+    const sale = getReq.result;
+    if (sale) {
+      sale.synced = -1; // -1 = failed, needs manual review
+      sale.syncError = error;
+      store.put(sale);
+    }
+  };
 
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
