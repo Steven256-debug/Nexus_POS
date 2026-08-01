@@ -27,7 +27,8 @@ import { processSale } from '@/app/actions/sales';
 import { useRouter } from 'next/navigation';
 import { AddProductModal } from './add-product-modal';
 import { toast } from 'sonner';
-import { saveLocalProducts, addPendingSale } from '@/lib/offline-db';
+import { saveLocalProducts, addPendingSale, getLocalProducts } from '@/lib/offline-db';
+import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import type { CartItem, ProductWithRelations, PosClientProps } from '@/types';
 
 // ─── Cart Panel Component ──────────────────────────────────────
@@ -431,21 +432,6 @@ export default function PosClient({
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Cache products to local IndexedDB
-      if (initialProducts && initialProducts.length > 0) {
-        saveLocalProducts(initialProducts as any);
-      }
-    }
-  }, [initialProducts]);
-
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const discountAmount = (subtotal * discountPercent) / 100;
-  const tax = (subtotal - discountAmount) * taxRate;
-  const total = subtotal - discountAmount + tax;
-  const taxPercent = Math.round(taxRate * 100);
-
   const addToCart = useCallback((product: ProductWithRelations) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -468,6 +454,50 @@ export default function PosClient({
       ];
     });
   }, []);
+
+  // Global Hardware Barcode Scanner integration
+  useBarcodeScanner(useCallback((barcode: string) => {
+    if (isProcessing) return;
+    const exactMatches = products.filter(p =>
+      p.sku.toLowerCase() === barcode.toLowerCase() ||
+      p.barcode?.toLowerCase() === barcode.toLowerCase()
+    );
+    
+    if (exactMatches.length > 0) {
+      const product = exactMatches[0];
+      if (product.stockQuantity <= 0) {
+        toast.error(`Cannot add ${product.name}: Out of stock!`);
+        return;
+      }
+      addToCart(product);
+      toast.success(`Scanned: ${product.name}`);
+    } else {
+      toast.error(`Barcode not found: ${barcode}`);
+    }
+  }, [products, addToCart, isProcessing]));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Cache products to local IndexedDB
+      if (initialProducts && initialProducts.length > 0) {
+        saveLocalProducts(initialProducts as any);
+      } else {
+        // Fallback: If offline and SSR failed, load from local cache
+        getLocalProducts().then(cached => {
+          if (cached && cached.length > 0) {
+            setProducts(cached as unknown as ProductWithRelations[]);
+          }
+        });
+      }
+    }
+  }, [initialProducts]);
+
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discountAmount = (subtotal * discountPercent) / 100;
+  const tax = (subtotal - discountAmount) * taxRate;
+  const total = subtotal - discountAmount + tax;
+  const taxPercent = Math.round(taxRate * 100);
+
 
   const updateQuantity = useCallback((id: string, delta: number) => {
     setCart(prev => prev.map(item => {

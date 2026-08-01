@@ -18,6 +18,11 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const startOfYesterday = new Date(startOfToday);
   startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const startDate = thirtyDaysAgo;
+  const endDate = new Date();
+
   // 1. Today's Revenue & Completed Sales Count (DB Aggregation)
   const todaySalesAgg = await prisma.sale.aggregate({
     _sum: { totalAmount: true },
@@ -27,7 +32,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       createdAt: { gte: startOfToday }
     }
   });
-
+  
   // 2. Yesterday's Revenue for Real Growth %
   const yesterdaySalesAgg = await prisma.sale.aggregate({
     _sum: { totalAmount: true },
@@ -36,16 +41,13 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       createdAt: { gte: startOfYesterday, lt: startOfToday }
     }
   });
-
-  const todayRevenue = Number(todaySalesAgg._sum.totalAmount ?? 0);
-  const yesterdayRevenue = Number(yesterdaySalesAgg._sum.totalAmount ?? 0);
-  const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
-
-  // 3. Low Stock Items Count & Product Health Counts (DB Aggregation)
+  
+  // 3. Total Products Count
   const totalProducts = await prisma.product.count({
     where: { deletedAt: null }
   });
-
+  
+  // 4. Low Stock Items
   const lowStockProducts = await prisma.product.findMany({
     where: {
       deletedAt: null,
@@ -54,15 +56,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     include: { category: true, brand: true, unit: true, metadata: true },
     take: 10
   });
-
-  // 4. 30-Day Sales Trend — Aggregated via raw SQL to avoid loading all records
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const startDate = thirtyDaysAgo;
-  const endDate = new Date();
-
-  type DayAgg = { day: Date; revenue: number; cogs: number };
-  const dailyAgg = await prisma.$queryRaw<DayAgg[]>`
+  
+  // 5. 30-Day Sales Trend (Raw SQL)
+  const dailyAgg = await prisma.$queryRaw<{ day: Date; revenue: number; cogs: number }[]>`
     SELECT
       DATE("sales"."createdAt") as day,
       COALESCE(SUM("sales"."total_amount"), 0)::float as revenue,
@@ -75,6 +71,29 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     GROUP BY DATE("sales"."createdAt")
     ORDER BY day ASC
   `;
+  
+  // 6. Category Distribution
+  const categoryGroups = await prisma.product.groupBy({
+    by: ['categoryId'],
+    _count: { id: true },
+    where: { deletedAt: null },
+  });
+  
+  // 7. Recent Sales for Activity Feed
+  const recentSales = await prisma.sale.findMany({
+    where: { status: 'COMPLETED' },
+    include: {
+      cashier: true,
+      customer: true,
+      items: { include: { product: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+
+  const todayRevenue = Number(todaySalesAgg._sum.totalAmount ?? 0);
+  const yesterdayRevenue = Number(yesterdaySalesAgg._sum.totalAmount ?? 0);
+  const revenueGrowth = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
 
   // Build map from raw results, then fill 30-day range
   const aggMap = new Map<string, { sales: number; cogs: number }>();
@@ -96,13 +115,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     });
   }
 
-  // 5. Real Category Distribution from DB (replaces hardcoded dummy data)
-  const categoryGroups = await prisma.product.groupBy({
-    by: ['categoryId'],
-    _count: { id: true },
-    where: { deletedAt: null },
-  });
-
+  // Fetch Category Names separately since it depends on categoryGroups
   const categoryIds = categoryGroups
     .filter(g => g.categoryId !== null)
     .map(g => g.categoryId as string);
@@ -118,18 +131,6 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     value: g._count.id,
     color: CHART_COLORS[i % CHART_COLORS.length],
   }));
-
-  // 6. Recent Sales for Activity Feed (Limit 5)
-  const recentSales = await prisma.sale.findMany({
-    where: { status: 'COMPLETED' },
-    include: {
-      cashier: true,
-      customer: true,
-      items: { include: { product: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
 
   return {
     todayRevenue,

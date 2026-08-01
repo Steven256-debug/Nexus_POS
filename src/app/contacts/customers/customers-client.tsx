@@ -96,7 +96,7 @@ export default function CustomersClient({ initialCustomers, groups }: { initialC
                       {c.group?.name || 'Retail Customers'} ({c.group?.discount || 0}% Off)
                     </span>
                   </td>
-                  <td className="p-4 text-right font-black text-emerald-600">GH₵{c.creditLimit.toFixed(2)}</td>
+                  <td className="p-4 text-right font-black text-emerald-600">GH₵{Number(c.creditLimit).toFixed(2)}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (

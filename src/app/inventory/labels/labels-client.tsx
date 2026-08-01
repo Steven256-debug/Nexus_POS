@@ -37,7 +37,7 @@ export default function LabelsClient({ products }: { products: any[] }) {
             className="w-full h-11 rounded-xl bg-card border border-border px-3 text-sm font-bold"
           >
             {products.map(p => (
-              <option key={p.id} value={p.id}>{p.name} (SKU: {p.sku}) - GH₵{p.pricePerUnit.toFixed(2)}</option>
+              <option key={p.id} value={p.id}>{p.name} (SKU: {p.sku}) - GH₵{Number(p.pricePerUnit).toFixed(2)}</option>
             ))}
           </select>
         </div>
@@ -68,7 +68,7 @@ export default function LabelsClient({ products }: { products: any[] }) {
                 <div className="font-mono text-xl tracking-widest font-black py-1 px-3 bg-zinc-100 rounded-md border border-zinc-200">
                   ||||| {selectedProduct.sku} |||||
                 </div>
-                <p className="text-sm font-black text-blue-600">GH₵{selectedProduct.pricePerUnit.toFixed(2)}</p>
+                <p className="text-sm font-black text-blue-600">GH₵{Number(selectedProduct.pricePerUnit).toFixed(2)}</p>
               </div>
             ))}
           </div>

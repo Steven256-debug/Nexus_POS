@@ -77,7 +77,7 @@ export default function PriceUpdateClient({ initialProducts }: { initialProducts
                 <tr key={p.id} className="hover:bg-muted/40 transition-colors">
                   <td className="p-4 font-mono font-bold text-xs text-muted-foreground">{p.sku}</td>
                   <td className="p-4 font-bold text-foreground">{p.name}</td>
-                  <td className="p-4 text-right font-semibold text-muted-foreground">GH₵{p.pricePerUnit.toFixed(2)}</td>
+                  <td className="p-4 text-right font-semibold text-muted-foreground">GH₵{Number(p.pricePerUnit).toFixed(2)}</td>
                   <td className="p-4 text-right">
                     <Input
                       type="number"

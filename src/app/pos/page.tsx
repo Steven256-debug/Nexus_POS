@@ -12,30 +12,34 @@ interface PageProps {
 
 export default async function PosPage({ searchParams }: PageProps) {
   const products = await getProducts();
-  const { resume } = await searchParams;
-
-  // Fetch tax rate from system settings (default 15% for Ghana VAT)
   const taxRateStr = await getSetting('tax_rate');
+  
+  const { resume } = await searchParams;
   const taxRate = taxRateStr ? parseFloat(taxRateStr) / 100 : 0.15;
   
   let resumedSaleId: string | null = null;
   let initialCart: CartItem[] = [];
 
   if (resume) {
-    const sale = await prisma.sale.findUnique({
-      where: { id: resume },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                unit: true
+    let sale = null;
+    try {
+      sale = await prisma.sale.findUnique({
+        where: { id: resume },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  unit: true
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+    } catch (err) {
+      console.error('Offline or DB Error resuming sale:', err);
+    }
 
     if (sale && sale.status === 'DRAFT') {
       resumedSaleId = sale.id;

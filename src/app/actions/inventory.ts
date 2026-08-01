@@ -33,21 +33,26 @@ export async function getProducts(options?: {
     ];
   }
 
-  return await prisma.product.findMany({
-    where,
-    take: options?.take ?? 100,
-    skip: options?.skip,
-    ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
-    include: {
-      metadata: true,
-      category: true,
-      brand: true,
-      unit: true,
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
+  try {
+    return await prisma.product.findMany({
+      where,
+      take: options?.take ?? 100,
+      skip: options?.skip,
+      ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      include: {
+        metadata: true,
+        category: true,
+        brand: true,
+        unit: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  } catch (err) {
+    console.error('Offline or DB Error in getProducts:', err);
+    return [];
+  }
 }
 
 export async function getProduct(id: string) {

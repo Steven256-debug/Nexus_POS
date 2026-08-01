@@ -205,7 +205,7 @@ export default function InventoryClient({ initialProducts, userRole = 'EMPLOYEE'
                     {getCatName(product)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right font-medium">GH₵{product.pricePerUnit.toFixed(2)}</TableCell>
+                <TableCell className="text-right font-medium">GH₵{Number(product.pricePerUnit).toFixed(2)}</TableCell>
                 <TableCell className="text-right font-medium">
                   {product.stockQuantity}
                 </TableCell>

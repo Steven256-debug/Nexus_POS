@@ -6,8 +6,13 @@ import { logAction } from '@/lib/audit';
 import { requireAuth, requireAdmin, type ActionResult, ok, err } from '@/lib/action-utils';
 
 export async function getSetting(key: string): Promise<string | null> {
-  const setting = await prisma.setting.findUnique({ where: { key } });
-  return setting?.value ?? null;
+  try {
+    const setting = await prisma.setting.findUnique({ where: { key } });
+    return setting?.value ?? null;
+  } catch (err) {
+    console.error('Offline or DB Error in getSetting:', err);
+    return null;
+  }
 }
 
 export async function getSettings(): Promise<Record<string, string>> {

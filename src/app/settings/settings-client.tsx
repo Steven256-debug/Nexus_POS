@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building, ShieldCheck, Save, CheckCircle2, Percent } from 'lucide-react';
+import { Building, ShieldCheck, Save, CheckCircle2, Percent, Printer } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { updateBusinessLocation } from '@/app/actions/settings';
@@ -23,6 +23,12 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
   const [taxRate, setTaxRate] = useState(initialSettings.tax_rate || '15');
   const [isSavingTax, setIsSavingTax] = useState(false);
   const [isTaxSaved, setIsTaxSaved] = useState(false);
+
+  // Hardware settings
+  const [autoPrint, setAutoPrint] = useState(initialSettings.auto_print_receipt === 'true');
+  const [printerWidth, setPrinterWidth] = useState(initialSettings.printer_width || '80mm');
+  const [isSavingHardware, setIsSavingHardware] = useState(false);
+  const [isHardwareSaved, setIsHardwareSaved] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +57,22 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
       toast.error('Error updating tax rate');
     } finally {
       setIsSavingTax(false);
+    }
+  };
+
+  const handleSaveHardware = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingHardware(true);
+    try {
+      await setSetting('auto_print_receipt', autoPrint.toString());
+      await setSetting('printer_width', printerWidth);
+      setIsHardwareSaved(true);
+      toast.success('Hardware settings updated');
+      setTimeout(() => setIsHardwareSaved(false), 3000);
+    } catch (error) {
+      toast.error('Error updating hardware settings');
+    } finally {
+      setIsSavingHardware(false);
     }
   };
 
@@ -170,6 +192,57 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
             )}
             <Button type="submit" disabled={isSavingTax} className="ml-auto bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold flex items-center gap-2">
               <Save className="w-4 h-4" /> {isSavingTax ? 'Saving...' : 'Save Tax Rate'}
+            </Button>
+          </div>
+        </form>
+
+        <form onSubmit={handleSaveHardware} className="p-6 bg-card rounded-3xl border border-border space-y-4">
+          <div className="flex items-center gap-3 pb-2 border-b border-border">
+            <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-2xl">
+              <Printer className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Hardware & Printing</h3>
+              <p className="text-xs text-muted-foreground">Receipt printer preferences</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-bold text-foreground">Auto-Print Receipts</label>
+                <p className="text-[11px] text-muted-foreground">Automatically trigger print dialog after checkout</p>
+              </div>
+              <input 
+                type="checkbox" 
+                checked={autoPrint}
+                onChange={e => setAutoPrint(e.target.checked)}
+                className="w-5 h-5 accent-blue-600 cursor-pointer"
+              />
+            </div>
+            
+            <div>
+              <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Printer Paper Width</label>
+              <select
+                value={printerWidth}
+                onChange={e => setPrinterWidth(e.target.value)}
+                className="w-full h-11 px-3 rounded-xl border border-border bg-card text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="80mm">Standard Thermal (80mm)</option>
+                <option value="58mm">Compact Thermal (58mm)</option>
+                <option value="100%">Full Page (A4/Letter)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-between">
+            {isHardwareSaved && (
+              <div className="flex items-center gap-2 text-emerald-600 text-sm font-bold">
+                <CheckCircle2 className="w-4 h-4" /> Saved
+              </div>
+            )}
+            <Button type="submit" disabled={isSavingHardware} className="ml-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center gap-2">
+              <Save className="w-4 h-4" /> {isSavingHardware ? 'Saving...' : 'Save Printer Specs'}
             </Button>
           </div>
         </form>

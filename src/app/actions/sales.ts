@@ -35,7 +35,7 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
     }
 
     // Generate unique invoice number using PostgreSQL advisory lock to prevent race conditions
-    await tx.$queryRawUnsafe(`SELECT pg_advisory_xact_lock(1)`);
+    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(1)`);
     const lastSale = await tx.sale.findFirst({
       orderBy: { createdAt: 'desc' },
       select: { invoiceNo: true }
@@ -147,6 +147,9 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
         payments: true
       }
     });
+  }, {
+    maxWait: 15000, // 15 seconds to wait for a connection
+    timeout: 30000, // 30 seconds for the transaction to complete
   });
 
   // Audit log for completed sales
