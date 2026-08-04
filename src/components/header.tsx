@@ -82,7 +82,7 @@ export function TopHeader() {
       setExpenseAmount('');
       setExpenseDesc('');
       toast.success('Expense recorded successfully!');
-    } catch {
+    } catch (err) {
       console.error(err);
       toast.error('Failed to record expense');
     }
