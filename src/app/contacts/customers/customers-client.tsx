@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCheck, Search, Plus, Phone, Mail } from 'lucide-react';
+import { UserCheck, Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -42,7 +42,7 @@ export default function CustomersClient({ initialCustomers, groups }: { initialC
       setEmail('');
       setGroupId('');
       setCreditLimit('');
-    } catch (err) {
+    } catch {
       toast.error('Failed to add customer');
     }
   };

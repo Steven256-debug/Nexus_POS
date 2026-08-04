@@ -13,10 +13,9 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell,
-  Legend
+  Cell
 } from 'recharts';
-import { TrendingUp, DollarSign, Calendar, Filter, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, ArrowUpRight } from 'lucide-react';
 
 interface ChartProps {
   salesData: { date: string; sales: number; profit: number }[];

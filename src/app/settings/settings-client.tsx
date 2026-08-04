@@ -38,7 +38,7 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
       setIsSaved(true);
       toast.success('Business profile saved');
       setTimeout(() => setIsSaved(false), 3000);
-    } catch (error) {
+    } catch {
       toast.error('Error updating settings');
     } finally {
       setIsSaving(false);
@@ -53,7 +53,7 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
       setIsTaxSaved(true);
       toast.success('Tax rate updated');
       setTimeout(() => setIsTaxSaved(false), 3000);
-    } catch (error) {
+    } catch {
       toast.error('Error updating tax rate');
     } finally {
       setIsSavingTax(false);
@@ -69,7 +69,7 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
       setIsHardwareSaved(true);
       toast.success('Hardware settings updated');
       setTimeout(() => setIsHardwareSaved(false), 3000);
-    } catch (error) {
+    } catch {
       toast.error('Error updating hardware settings');
     } finally {
       setIsSavingHardware(false);
@@ -91,7 +91,7 @@ export default function SettingsClient({ initialLocation, initialSettings = {} }
         toast.success('All transaction data cleared successfully');
         setTimeout(() => window.location.reload(), 1500);
       }
-    } catch (error) {
+    } catch {
       toast.error('Error clearing test data');
     } finally {
       setIsClearing(false);

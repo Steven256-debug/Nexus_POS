@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Plus, Percent, Tag } from 'lucide-react';
+import { Users, Plus, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ export default function GroupsClient({ initialGroups }: { initialGroups: any[] }
       setIsAddOpen(false);
       setName('');
       setDiscount('');
-    } catch (err) {
+    } catch {
       alert('Failed to add group');
     }
   };

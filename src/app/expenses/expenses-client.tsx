@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { DollarSign, Plus, Calendar, TrendingDown, Receipt, Search, FileText } from 'lucide-react';
+import { DollarSign, Plus, TrendingDown, Receipt, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

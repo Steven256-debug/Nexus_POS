@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createProduct } from '@/app/actions/inventory';
-import { Plus, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ModalProps {

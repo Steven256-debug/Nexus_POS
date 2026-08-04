@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Tag, Save, CheckCircle2 } from 'lucide-react';
+import { Save, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { updateProduct } from '@/app/actions/inventory';
 
 export default function PriceUpdateClient({ initialProducts }: { initialProducts: any[] }) {
-  const [products, setProducts] = useState(initialProducts);
+  const [products] = useState(initialProducts);
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -30,7 +30,7 @@ export default function PriceUpdateClient({ initialProducts }: { initialProducts
       }
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-    } catch (err) {
+    } catch {
       alert('Error updating prices');
     } finally {
       setIsSaving(false);

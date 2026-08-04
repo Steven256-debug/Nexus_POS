@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building, Search, Plus, Phone, Mail, Trash2 } from 'lucide-react';
+import { Building, Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -39,7 +39,7 @@ export default function SuppliersClient({ initialSuppliers }: { initialSuppliers
       setCompanyName('');
       setPhone('');
       setEmail('');
-    } catch (err) {
+    } catch {
       alert('Failed to add supplier');
     }
   };

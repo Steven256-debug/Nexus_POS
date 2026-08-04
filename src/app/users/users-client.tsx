@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, UserCog, Power, PowerOff, Mail, Calendar, Shield, MoreHorizontal } from 'lucide-react';
+import { Plus, UserCog, Power, PowerOff, Mail, Shield } from 'lucide-react';
 import { createUser, updateUser, toggleUserStatus } from '../actions/users';
 
 type User = {

@@ -3,22 +3,16 @@
 import { useState, useEffect } from 'react';
 import { 
   Search, 
-  Plus, 
   Calculator, 
   Calendar, 
   Bell, 
   Building2, 
   ShoppingCart, 
-  User as UserIcon, 
-  ChevronDown, 
-  LogOut, 
-  Store,
-  DollarSign,
-  X
+  User as DollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { ThemeToggle } from './theme-toggle';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -59,7 +53,7 @@ export function TopHeader() {
       try {
         const res = safeEvaluate(calcInput);
         setCalcResult(String(res));
-      } catch (err) {
+      } catch {
         setCalcResult('Error');
       }
     } else if (val === 'C') {
@@ -88,7 +82,7 @@ export function TopHeader() {
       setExpenseAmount('');
       setExpenseDesc('');
       toast.success('Expense recorded successfully!');
-    } catch (err) {
+    } catch {
       console.error(err);
       toast.error('Failed to record expense');
     }

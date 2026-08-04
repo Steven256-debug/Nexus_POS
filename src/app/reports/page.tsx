@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { BarChart3, TrendingUp, DollarSign, Package, Calendar, Award } from 'lucide-react';
+import { BarChart3, Award } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 

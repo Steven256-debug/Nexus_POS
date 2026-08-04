@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import {} from '@/components/ui/badge';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';

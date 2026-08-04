@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { logAction } from '@/lib/audit';
-import { requireAuth, requireAdmin, type ActionResult, ok, err } from '@/lib/action-utils';
+import { requireAdmin, type ActionResult, ok, err } from '@/lib/action-utils';
 
 export async function getSetting(key: string): Promise<string | null> {
   try {

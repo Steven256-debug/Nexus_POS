@@ -40,7 +40,7 @@ export default function ImportContactsPage() {
         }
       }
       setSuccessCount(count);
-    } catch (err) {
+    } catch {
       alert('Error parsing CSV file');
     } finally {
       setIsImporting(false);

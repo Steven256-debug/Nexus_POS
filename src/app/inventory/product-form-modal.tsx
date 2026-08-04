@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,7 +111,7 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="flex items-center gap-4">
             {previewUrl && (
-              <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-border" />
+              <Image src={previewUrl} alt="Preview" width={64} height={64} className="object-cover rounded-lg border border-border" />
             )}
             <div className="flex-1 space-y-2">
               <Label>Product Image</Label>

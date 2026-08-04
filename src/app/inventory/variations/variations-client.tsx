@@ -24,7 +24,7 @@ export default function VariationsClient({ initialVariations }: { initialVariati
       setIsAddOpen(false);
       setVarName('');
       setVarValues('');
-    } catch (error) {
+    } catch {
       alert('Error creating variation');
     } finally {
       setIsSaving(false);

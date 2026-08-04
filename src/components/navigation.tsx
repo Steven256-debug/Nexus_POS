@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
-import { ThemeToggle } from './theme-toggle';
+import {} from './theme-toggle';
 import type { LucideIcon } from 'lucide-react';
 
 interface NavGroup {

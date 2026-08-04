@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AutoSizeText } from '@/components/auto-size-text';
+import {} from '@/components/auto-size-text';
 import { processSale } from '@/app/actions/sales';
 import { useRouter } from 'next/navigation';
 import { AddProductModal } from './add-product-modal';
@@ -280,8 +280,8 @@ function ProductCatalog({
   onAddProductOpen: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<'categories' | 'brands' | 'featured'>('categories');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
+  const [selectedCategory] = useState<string>('ALL');
+  const [selectedBrand] = useState<string>('ALL');
 
   const categoriesList = Array.from(new Set(products.map(p => p.category?.name || 'General'))).filter(Boolean);
   const brandsList = Array.from(new Set(products.map(p => p.brand?.name || 'Unbranded'))).filter(Boolean);
