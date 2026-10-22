@@ -41,7 +41,7 @@ export default async function PosPage({ searchParams }: PageProps) {
       console.error('Offline or DB Error resuming sale:', err);
     }
 
-    if (sale && sale.status === 'DRAFT') {
+    if (sale && (sale.status === 'DRAFT' || sale.status === 'QUOTATION')) {
       resumedSaleId = sale.id;
       initialCart = sale.items.map(item => ({
         id: item.product.id,
@@ -54,6 +54,8 @@ export default async function PosPage({ searchParams }: PageProps) {
       }));
     }
   }
+
+  const isQuotationResume = resume && resumedSaleId;
   
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col animate-in fade-in zoom-in-95 duration-500">
@@ -61,7 +63,7 @@ export default async function PosPage({ searchParams }: PageProps) {
         <div>
           <h1 className="text-4xl font-bold text-foreground tracking-tight">Point of Sale</h1>
           <p className="text-muted-foreground mt-1">
-            {resumedSaleId ? `Resuming Draft Transaction #${resumedSaleId.slice(0, 8).toUpperCase()}` : 'Select items to add to the current transaction.'}
+            {resumedSaleId ? `Converting / Resuming Transaction #${resumedSaleId.slice(0, 8).toUpperCase()}` : 'Select items to add to the current transaction.'}
           </p>
         </div>
         <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100 font-medium text-sm">

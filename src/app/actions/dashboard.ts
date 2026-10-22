@@ -57,20 +57,26 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     take: 10
   });
   
-  // 5. 30-Day Sales Trend (Raw SQL)
-  const dailyAgg = await prisma.$queryRaw<{ day: Date; revenue: number; cogs: number }[]>`
-    SELECT
-      DATE("sales"."createdAt") as day,
-      COALESCE(SUM("sales"."total_amount"), 0)::float as revenue,
-      COALESCE(SUM("sale_items"."cost_at_sale" * "sale_items"."quantity"), 0)::float as cogs
-    FROM "sales"
-    LEFT JOIN "sale_items" ON "sale_items"."sale_id_fk" = "sales"."id"
-    WHERE "sales"."status" = 'COMPLETED'::"SaleStatus"
-      AND "sales"."createdAt" >= ${startDate}
-      AND "sales"."createdAt" <= ${endDate}
-    GROUP BY DATE("sales"."createdAt")
-    ORDER BY day ASC
-  `;
+  // 5. 30-Day Sales Trend (SQLite / Standard SQL)
+  let dailyAgg: { day: string | Date; revenue: number; cogs: number }[] = [];
+  try {
+    dailyAgg = await prisma.$queryRaw<{ day: string | Date; revenue: number; cogs: number }[]>`
+      SELECT
+        strftime('%Y-%m-%d', datetime("sales"."createdAt" / 1000, 'unixepoch')) as day,
+        COALESCE(SUM("sales"."total_amount"), 0) as revenue,
+        COALESCE(SUM("sale_items"."cost_at_sale" * "sale_items"."quantity"), 0) as cogs
+      FROM "sales"
+      LEFT JOIN "sale_items" ON "sale_items"."sale_id_fk" = "sales"."id"
+      WHERE "sales"."status" = 'COMPLETED'
+        AND "sales"."createdAt" >= ${startDate}
+        AND "sales"."createdAt" <= ${endDate}
+      GROUP BY day
+      ORDER BY day ASC
+    `;
+  } catch (err) {
+    console.warn('Dashboard trend fallback:', err);
+    dailyAgg = [];
+  }
   
   // 6. Category Distribution
   const categoryGroups = await prisma.product.groupBy({

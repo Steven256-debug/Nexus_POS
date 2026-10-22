@@ -6,6 +6,7 @@ const EMPLOYEE_ALLOWED_PREFIXES = [
   '/pos',
   '/employee',
   '/receipt',
+  '/waybill',
   '/sales',
   '/inventory',
   '/contacts',

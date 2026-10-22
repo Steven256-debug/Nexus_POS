@@ -20,7 +20,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
   const [price, setPrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
-  const [category, setCategory] = useState('Aluzinc Sheets');
+  const [category, setCategory] = useState('General Wholesale');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +67,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Product Name *</label>
             <Input
-              placeholder="e.g. ALUZINC 0.50 PRIME"
+              placeholder="e.g. Royal Aroma Rice 50kg / Carton Sugar (24x1kg)"
               value={name}
               onChange={e => setName(e.target.value)}
               required

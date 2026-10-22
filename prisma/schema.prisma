@@ -3,46 +3,18 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
-
-// ─── Enums ──────────────────────────────────────────────────────
-
-enum UserRole {
-  ADMIN
-  EMPLOYEE
-}
-
-enum SaleStatus {
-  COMPLETED
-  DRAFT
-  QUOTATION
-  REFUNDED
-  CANCELLED
-}
-
-enum PaymentMethod {
-  CASH
-  MOBILE_MONEY
-  CARD
-  MULTIPLE
-  CREDIT
-  HOLD
-}
-
-// ─── Models ─────────────────────────────────────────────────────
 
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
   password  String
-  role      UserRole @default(EMPLOYEE)
+  role      String   @default("EMPLOYEE")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @map("updated_at")
 
   sales     Sale[]
   expenses  Expense[]
@@ -92,7 +64,7 @@ model Unit {
 model CustomerGroup {
   id        String     @id @default(uuid())
   name      String // Retail, Wholesale, Contractor
-  discount  Decimal    @default(0) @db.Decimal(10, 2)
+  discount  Float      @default(0)
   customers Customer[]
 
   @@map("customer_groups")
@@ -105,11 +77,9 @@ model Customer {
   email       String?
   groupId     String?        @map("group_id_fk")
   group       CustomerGroup? @relation(fields: [groupId], references: [id])
-  creditLimit Decimal        @default(0) @map("credit_limit") @db.Decimal(10, 2)
+  creditLimit Float          @default(0) @map("credit_limit")
   sales       Sale[]
-  updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  @@index([groupId])
   @@map("customers")
 }
 
@@ -120,7 +90,6 @@ model Supplier {
   phone       String?
   email       String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("suppliers")
 }
@@ -136,14 +105,13 @@ model Product {
   brand         Brand?    @relation(fields: [brandId], references: [id])
   unitId        String?   @map("unit_id_fk")
   unit          Unit?     @relation(fields: [unitId], references: [id])
-  pricePerUnit  Decimal   @map("price_per_unit") @db.Decimal(10, 2)
-  costPrice     Decimal   @default(0) @map("cost_price") @db.Decimal(10, 2)
+  pricePerUnit  Float     @map("price_per_unit")
+  costPrice     Float     @default(0) @map("cost_price")
   stockQuantity Int       @default(0) @map("stock_quantity")
   minStockAlert Int       @default(5) @map("min_stock_alert")
   imageUrl      String?   @map("image_url")
   isFeatured    Boolean   @default(false) @map("is_featured")
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
 
   metadata  ProductMetadata[]
@@ -163,39 +131,36 @@ model ProductMetadata {
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([productId, key])
-  @@index([productId])
   @@map("product_metadata")
 }
 
 model Sale {
-  id             String           @id @default(uuid())
-  invoiceNo      String           @unique @map("invoice_no")
-  locationId     String?          @map("location_id_fk")
+  id             String            @id @default(uuid())
+  invoiceNo      String            @unique @map("invoice_no")
+  locationId     String?           @map("location_id_fk")
   location       BusinessLocation? @relation(fields: [locationId], references: [id])
-  cashierId      String           @map("cashier_id_fk")
-  cashier        User             @relation(fields: [cashierId], references: [id])
-  customerId     String?          @map("customer_id_fk")
-  customer       Customer?        @relation(fields: [customerId], references: [id])
-  status         SaleStatus       @default(COMPLETED)
-  paymentMethod  PaymentMethod    @default(CASH) @map("payment_method")
-  totalAmount    Decimal          @map("total_amount") @db.Decimal(10, 2)
-  discountAmount Decimal          @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  taxAmount      Decimal          @default(0) @map("tax_amount") @db.Decimal(10, 2)
-  paidAmount     Decimal          @default(0) @map("paid_amount") @db.Decimal(10, 2)
-  changeAmount   Decimal          @default(0) @map("change_amount") @db.Decimal(10, 2)
+  cashierId      String            @map("cashier_id_fk")
+  cashier        User              @relation(fields: [cashierId], references: [id])
+  customerId     String?           @map("customer_id_fk")
+  customer       Customer?         @relation(fields: [customerId], references: [id])
+  status         String            @default("COMPLETED")
+  paymentMethod  String            @default("CASH") @map("payment_method")
+  totalAmount    Float             @map("total_amount")
+  discountAmount Float             @default(0) @map("discount_amount")
+  taxAmount      Float             @default(0) @map("tax_amount")
+  paidAmount     Float             @default(0) @map("paid_amount")
+  changeAmount   Float             @default(0) @map("change_amount")
   note           String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt @map("updated_at")
+  createdAt      DateTime          @default(now())
 
   items    SaleItem[]
   payments Payment[]
   returns  Return[]
 
+  @@map("sales")
   @@index([status, createdAt])
   @@index([cashierId])
   @@index([customerId])
-  @@map("sales")
 }
 
 model SaleItem {
@@ -203,15 +168,13 @@ model SaleItem {
   saleId      String  @map("sale_id_fk")
   productId   String  @map("product_id_fk")
   quantity    Int
-  priceAtSale Decimal @map("price_at_sale") @db.Decimal(10, 2)
-  costAtSale  Decimal @default(0) @map("cost_at_sale") @db.Decimal(10, 2)
+  priceAtSale Float   @map("price_at_sale")
+  costAtSale  Float   @default(0) @map("cost_at_sale")
 
   sale        Sale         @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product     Product      @relation(fields: [productId], references: [id])
   returnItems ReturnItem[]
 
-  @@index([saleId])
-  @@index([productId])
   @@map("sale_items")
 }
 
@@ -219,28 +182,27 @@ model Payment {
   id        String   @id @default(uuid())
   saleId    String   @map("sale_id_fk")
   method    String
-  amount    Decimal  @db.Decimal(10, 2)
+  amount    Float
   note      String?
   createdAt DateTime @default(now())
 
   sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
-  @@index([saleId])
   @@map("payments")
 }
 
 model Expense {
   id          String   @id @default(uuid())
   category    String
-  amount      Decimal  @db.Decimal(10, 2)
+  amount      Float
   description String?
   userId      String?  @map("user_id_fk")
   user        User?    @relation(fields: [userId], references: [id])
   date        DateTime @default(now())
 
+  @@map("expenses")
   @@index([date])
   @@index([category])
-  @@map("expenses")
 }
 
 model VariationTemplate {
@@ -258,16 +220,13 @@ model VariationOption {
 
   template   VariationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  @@unique([templateId, value])
-  @@index([templateId])
   @@map("variation_options")
 }
 
 model Setting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
 
   @@map("settings")
 }
@@ -276,7 +235,7 @@ model Return {
   id        String   @id @default(uuid())
   saleId    String   @map("sale_id_fk")
   userId    String   @map("user_id_fk")
-  amount    Decimal  @db.Decimal(10, 2)
+  amount    Float
   reason    String?
   createdAt DateTime @default(now())
 
@@ -284,8 +243,6 @@ model Return {
   user      User     @relation(fields: [userId], references: [id])
   items     ReturnItem[]
 
-  @@index([saleId])
-  @@index([userId])
   @@map("returns")
 }
 
@@ -299,8 +256,6 @@ model ReturnItem {
   return      Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
   saleItem    SaleItem @relation(fields: [saleItemId], references: [id])
 
-  @@index([returnId])
-  @@index([saleItemId])
   @@map("return_items")
 }
 
@@ -315,7 +270,5 @@ model AuditLog {
 
   user      User?    @relation(fields: [userId], references: [id])
 
-  @@index([userId])
-  @@index([createdAt])
   @@map("audit_logs")
 }

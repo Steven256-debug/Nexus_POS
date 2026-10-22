@@ -27,9 +27,9 @@ export async function getProducts(options?: {
 
   if (options?.search) {
     where.OR = [
-      { name: { contains: options.search, mode: 'insensitive' } },
-      { sku: { contains: options.search, mode: 'insensitive' } },
-      { barcode: { contains: options.search, mode: 'insensitive' } },
+      { name: { contains: options.search } },
+      { sku: { contains: options.search } },
+      { barcode: { contains: options.search } },
     ];
   }
 

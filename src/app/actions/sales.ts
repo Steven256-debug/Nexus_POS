@@ -34,8 +34,12 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
       });
     }
 
-    // Generate unique invoice number using PostgreSQL advisory lock to prevent race conditions
-    await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(1)`);
+    // Advisory lock for PostgreSQL (automatically serialized in SQLite transactions)
+    try {
+      await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(1)`);
+    } catch {
+      // Ignored on SQLite
+    }
     const lastSale = await tx.sale.findFirst({
       orderBy: { createdAt: 'desc' },
       select: { invoiceNo: true }

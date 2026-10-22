@@ -24,7 +24,8 @@ import {
   UserCheck,
   Building,
   Shield,
-  History
+  History,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
@@ -49,7 +50,7 @@ export function Navigation() {
     Sell: true,
   });
 
-  if (pathname === '/receipt' || pathname === '/login') return null;
+  if (pathname === '/login' || pathname?.startsWith('/receipt') || pathname?.startsWith('/waybill')) return null;
   if (!session) return null;
 
   const role = session.user?.role || 'ADMIN';
@@ -92,6 +93,7 @@ export function Navigation() {
         { label: 'List POS Sales', href: '/sales/pos-list', icon: Clock },
         { label: 'Draft Sales', href: '/sales/drafts', icon: FileText },
         { label: 'Quotations', href: '/sales/quotations', icon: FileSpreadsheet },
+        { label: 'Deliveries & Waybills', href: '/sales/deliveries', icon: Truck },
       ],
     },
     {

@@ -131,7 +131,7 @@ export function TopHeader() {
     link.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (pathname === '/login' || pathname?.startsWith('/receipt')) return null;
+  if (pathname === '/login' || pathname?.startsWith('/receipt') || pathname?.startsWith('/waybill')) return null;
 
   return (
     <>
