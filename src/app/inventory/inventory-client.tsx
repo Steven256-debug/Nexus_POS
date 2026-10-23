@@ -11,7 +11,15 @@ import { deleteProduct, importProductsBatch } from '@/app/actions/inventory';
 import { useRef } from 'react';
 import { toast } from 'sonner';
 
-export default function InventoryClient({ initialProducts, userRole = 'EMPLOYEE' }: { initialProducts: any[], userRole?: string }) {
+export default function InventoryClient({ 
+  initialProducts, 
+  initialCategories = [],
+  userRole = 'EMPLOYEE' 
+}: { 
+  initialProducts: any[], 
+  initialCategories?: any[],
+  userRole?: string 
+}) {
   const [products, setProducts] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -115,7 +123,30 @@ export default function InventoryClient({ initialProducts, userRole = 'EMPLOYEE'
     }
   };
 
-  const categories = ['ALL', 'Aluzinc Sheets', 'Anti-Rust Sheets', 'Roofing Accessories'];
+  const fallbackCategories = [
+    'Mineral & Bottled Water',
+    'Sachet Water',
+    'Carbonated Soft Drinks',
+    'Energy Drinks',
+    'Fruit Juices & Nectars',
+    'Malt Drinks',
+    'Flavored & Sparkling Drinks'
+  ];
+
+  const dbCategoryNames = (initialCategories || []).map((c: any) => c.name).filter(Boolean);
+  const productCategoryNames = products.map(p => getCatName(p)).filter(Boolean);
+  const combinedSet = new Set<string>();
+  
+  dbCategoryNames.forEach(c => combinedSet.add(c));
+  productCategoryNames.forEach(c => {
+    if (c !== 'General') combinedSet.add(c);
+  });
+  
+  if (combinedSet.size === 0) {
+    fallbackCategories.forEach(c => combinedSet.add(c));
+  }
+
+  const categories = ['ALL', ...Array.from(combinedSet)];
 
   return (
     <div className="space-y-6">

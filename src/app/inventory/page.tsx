@@ -1,4 +1,4 @@
-import { getProducts } from '@/app/actions/inventory';
+import { getProducts, getCategories } from '@/app/actions/inventory';
 import InventoryClient from './inventory-client';
 import InventoryAnalytics from './inventory-analytics';
 import { getServerSession } from 'next-auth';
@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage() {
   const products = await getProducts();
+  const categories = await getCategories();
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role || 'EMPLOYEE';
   
@@ -20,7 +21,7 @@ export default async function InventoryPage() {
       
       <InventoryAnalytics products={products} />
       
-      <InventoryClient initialProducts={products} userRole={role} />
+      <InventoryClient initialProducts={products} initialCategories={categories} userRole={role} />
     </div>
   );
 }

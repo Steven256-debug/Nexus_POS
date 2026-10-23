@@ -7,16 +7,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { createProduct, updateProduct } from '@/app/actions/inventory';
+import { createProduct, updateProduct, getCategories } from '@/app/actions/inventory';
 import { toast } from 'sonner';
 
-const CATEGORY_METADATA = {
-  DOORS: ['Dimensions', 'Material/Finish'],
-  TEXTILES: ['Unit of Measure', 'Pattern/Color'],
-  BUILDING_MATERIALS: ['Weight/Volume', 'Brand']
+const DEFAULT_BEVERAGE_CATEGORIES = [
+  'Mineral & Bottled Water',
+  'Sachet Water',
+  'Carbonated Soft Drinks',
+  'Energy Drinks',
+  'Fruit Juices & Nectars',
+  'Malt Drinks',
+  'Flavored & Sparkling Drinks'
+];
+
+const CATEGORY_METADATA: Record<string, string[]> = {
+  'Mineral & Bottled Water': ['Packaging/Volume', 'Units Per Pack', 'Brand'],
+  'Sachet Water': ['Bags Count', 'Source/Manufacturer'],
+  'Carbonated Soft Drinks': ['Bottle/Can Size', 'Flavor', 'Brand'],
+  'Energy Drinks': ['Can Size', 'Caffeine Info', 'Brand'],
+  'Fruit Juices & Nectars': ['Volume', 'Flavor', 'Brand'],
+  'Malt Drinks': ['Volume/Size', 'Packaging Type', 'Brand']
 };
 
 export default function ProductFormModal({ isOpen, onClose, product, onSaved }: any) {
+  const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_BEVERAGE_CATEGORIES);
   const [formData, setFormData] = useState({
     name: '', sku: '', category: '', pricePerUnit: 0, stockQuantity: 0, minStockAlert: 5, imageUrl: ''
   });
@@ -26,9 +40,19 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
   useEffect(() => {
+    getCategories()
+      .then(cats => {
+        if (cats && cats.length > 0) {
+          setCategoriesList(cats.map((c: any) => c.name));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (product) {
       setFormData({
-        name: product.name, sku: product.sku, category: product.category || '',
+        name: product.name, sku: product.sku, category: product.category?.name || product.category || '',
         pricePerUnit: product.pricePerUnit, stockQuantity: product.stockQuantity, minStockAlert: product.minStockAlert,
         imageUrl: product.imageUrl || ''
       });
@@ -38,12 +62,12 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
       product.metadata?.forEach((m: any) => meta[m.key] = m.value);
       setMetadata(meta);
     } else {
-      setFormData({ name: '', sku: '', category: '', pricePerUnit: 0, stockQuantity: 0, minStockAlert: 5, imageUrl: '' });
+      setFormData({ name: '', sku: '', category: categoriesList[0] || 'Mineral & Bottled Water', pricePerUnit: 0, stockQuantity: 0, minStockAlert: 5, imageUrl: '' });
       setPreviewUrl('');
       setImageFile(null);
       setMetadata({});
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, categoriesList]);
 
   const handleMetadataChange = (key: string, value: string) => {
     setMetadata(prev => ({ ...prev, [key]: value }));
@@ -137,9 +161,9 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
               <Select value={(formData.category as string) || ''} onValueChange={v => setFormData({...formData, category: v || ''})}>
                 <SelectTrigger className="rounded-lg bg-background"><SelectValue placeholder="Select category..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DOORS">Doors</SelectItem>
-                  <SelectItem value="TEXTILES">Textiles</SelectItem>
-                  <SelectItem value="BUILDING_MATERIALS">Building Materials</SelectItem>
+                  {categoriesList.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

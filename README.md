@@ -1,6 +1,6 @@
 # Nexus POS — Enterprise Point of Sale & Inventory Management
 
-A full-featured, production-grade POS and ERP system built for **Francis Amoako Ventures** (Ghana), supporting inventory management, multi-payment sales, returns, expense tracking, and offline resilience.
+A full-featured, production-grade POS and ERP system built for **Anna POS** (Ghana), supporting inventory management, multi-payment sales, returns, expense tracking, and offline resilience.
 
 ## Tech Stack
 
@@ -136,4 +136,4 @@ src/
 
 ## License
 
-Private — Francis Amoako Ventures
+Private — Anna POS

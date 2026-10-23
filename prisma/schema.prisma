@@ -26,7 +26,7 @@ model User {
 
 model BusinessLocation {
   id      String  @id @default(uuid())
-  name    String // e.g. FRANCIS AMOAKO VENTURES (BL0001)
+  name    String // e.g. ANNA POS (BL0001)
   code    String  @unique // BL0001
   address String?
   phone   String?

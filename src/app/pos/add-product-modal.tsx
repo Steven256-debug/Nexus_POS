@@ -20,7 +20,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
   const [price, setPrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stock, setStock] = useState('');
-  const [category, setCategory] = useState('General Wholesale');
+  const [category, setCategory] = useState('Mineral & Bottled Water');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +67,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Product Name *</label>
             <Input
-              placeholder="e.g. Royal Aroma Rice 50kg / Carton Sugar (24x1kg)"
+              placeholder="e.g. Voltic Mineral Water 500ml (Pack of 16)"
               value={name}
               onChange={e => setName(e.target.value)}
               required
@@ -79,7 +79,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">SKU / Code *</label>
               <Input
-                placeholder="e.g. 1250"
+                placeholder="e.g. WAT-VOL-500"
                 value={sku}
                 onChange={e => setSku(e.target.value)}
                 required

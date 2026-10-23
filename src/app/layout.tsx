@@ -11,7 +11,7 @@ import { OfflineSyncProvider } from "@/components/offline-sync-provider";
 const inter = Inter({ subsets: ["latin"], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: "Francis Amoako Ventures - POS & ERP System",
+  title: "Anna POS - Beverage & Water Retail System",
   description: "Enterprise Point of Sale and Inventory Management System",
 };
 

@@ -42,7 +42,7 @@ export default function VariationsClient({ initialVariations }: { initialVariati
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-foreground">Product Variations & Attributes</h1>
-          <p className="text-muted-foreground text-sm">Configure roofing sheet thickness specs, color options, and widths.</p>
+          <p className="text-muted-foreground text-sm">Configure bottle volumes, pack sizes, and flavor options.</p>
         </div>
 
         <Button onClick={() => setIsAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2">
@@ -90,11 +90,11 @@ export default function VariationsClient({ initialVariations }: { initialVariati
           <form onSubmit={handleAddVariation} className="space-y-4 pt-2">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Variation Name *</label>
-              <Input placeholder="e.g. Profile Geometry" value={varName} onChange={e => setVarName(e.target.value)} required className="rounded-xl h-11" />
+              <Input placeholder="e.g. Bottle Size / Volume" value={varName} onChange={e => setVarName(e.target.value)} required className="rounded-xl h-11" />
             </div>
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Options (Comma separated) *</label>
-              <Input placeholder="e.g. IBR, Corrugated, Tile Profile" value={varValues} onChange={e => setVarValues(e.target.value)} required className="rounded-xl h-11" />
+              <Input placeholder="e.g. 330ml, 500ml, 750ml, 1.5L" value={varValues} onChange={e => setVarValues(e.target.value)} required className="rounded-xl h-11" />
             </div>
             <DialogFooter className="pt-2">
               <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)}>Cancel</Button>

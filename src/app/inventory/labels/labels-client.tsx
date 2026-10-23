@@ -63,7 +63,7 @@ export default function LabelsClient({ products }: { products: any[] }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {Array.from({ length: quantity }).map((_, idx) => (
               <div key={idx} className="p-4 bg-white text-zinc-950 rounded-xl border border-zinc-300 shadow-sm flex flex-col items-center justify-center text-center space-y-1.5 font-sans">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">FRANCIS AMOAKO VENTURES</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">ANNA POS</p>
                 <p className="text-xs font-black line-clamp-1">{selectedProduct.name}</p>
                 <div className="font-mono text-xl tracking-widest font-black py-1 px-3 bg-zinc-100 rounded-md border border-zinc-200">
                   ||||| {selectedProduct.sku} |||||

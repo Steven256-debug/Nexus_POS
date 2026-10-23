@@ -10,8 +10,8 @@ import {
 // ─── Product Validation ──────────────────────────────────────────
 describe('productInputSchema', () => {
   const validProduct = {
-    name: 'Aluzinc Sheet T.16',
-    sku: 'ALZ-016',
+    name: 'Voltic Mineral Water 500ml',
+    sku: 'WAT-VOL-500',
     pricePerUnit: 120.50,
     stockQuantity: 100,
   };
@@ -223,7 +223,7 @@ describe('expenseInputSchema', () => {
 describe('businessLocationSchema', () => {
   test('accepts valid location', () => {
     const result = businessLocationSchema.safeParse({
-      name: 'Francis Amoako Ventures',
+      name: 'Anna POS',
       code: 'BL0001',
     });
     expect(result.success).toBe(true);

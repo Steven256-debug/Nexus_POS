@@ -1,24 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { createProduct } from '@/app/actions/inventory';
+import { createProduct, getCategories } from '@/app/actions/inventory';
 import { toast } from 'sonner';
+
+const DEFAULT_BEVERAGE_CATEGORIES = [
+  'Mineral & Bottled Water',
+  'Sachet Water',
+  'Carbonated Soft Drinks',
+  'Energy Drinks',
+  'Fruit Juices & Nectars',
+  'Malt Drinks',
+  'Flavored & Sparkling Drinks'
+];
 
 export default function AddProductPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [category, setCategory] = useState('Aluzinc Sheets');
+  const [categoriesList, setCategoriesList] = useState<string[]>(DEFAULT_BEVERAGE_CATEGORIES);
+  const [category, setCategory] = useState(DEFAULT_BEVERAGE_CATEGORIES[0]);
   const [sellingPrice, setSellingPrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [stockQuantity, setStockQuantity] = useState('');
   const [minStockAlert, setMinStockAlert] = useState('10');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    getCategories()
+      .then(cats => {
+        if (cats && cats.length > 0) {
+          const names = cats.map((c: any) => c.name);
+          setCategoriesList(names);
+          setCategory(names[0]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,25 +86,25 @@ export default function AddProductPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Product Name *</label>
-            <Input placeholder="e.g. ALUZINC 0.50 WEST PRIME" value={name} onChange={e => setName(e.target.value)} required className="rounded-xl h-11" />
+            <Input placeholder="e.g. Voltic Mineral Water 500ml (Pack of 16)" value={name} onChange={e => setName(e.target.value)} required className="rounded-xl h-11" />
           </div>
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">SKU Code *</label>
-            <Input placeholder="e.g. 1204" value={sku} onChange={e => setSku(e.target.value)} required className="rounded-xl h-11" />
+            <Input placeholder="e.g. WAT-VOL-500" value={sku} onChange={e => setSku(e.target.value)} required className="rounded-xl h-11" />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Barcode (EAN/UPC)</label>
-            <Input placeholder="e.g. 89300001204" value={barcode} onChange={e => setBarcode(e.target.value)} className="rounded-xl h-11" />
+            <Input placeholder="e.g. 060012345001" value={barcode} onChange={e => setBarcode(e.target.value)} className="rounded-xl h-11" />
           </div>
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Category</label>
             <select value={category} onChange={e => setCategory(e.target.value)} className="w-full h-11 rounded-xl bg-card border border-border px-3 text-sm font-medium">
-              <option value="Aluzinc Sheets">Aluzinc Sheets</option>
-              <option value="Anti-Rust Sheets">Anti-Rust Sheets</option>
-              <option value="Roofing Accessories">Roofing Accessories</option>
+              {categoriesList.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
           </div>
         </div>

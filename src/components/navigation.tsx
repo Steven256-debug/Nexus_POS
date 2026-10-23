@@ -131,11 +131,11 @@ export function Navigation() {
       <nav className="hidden lg:flex fixed top-0 left-0 h-screen w-20 hover:w-64 transition-[width] duration-300 ease-in-out group bg-transparent dark:bg-transparent backdrop-blur-2xl text-card-foreground border-r border-border/30 p-4 z-50 flex-col hide-on-print overflow-x-hidden overflow-y-auto">
         <div className="mb-6 p-2 flex items-center justify-start gap-4">
           <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
-            FA
+            AP
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            <h1 className="text-base font-black tracking-tight text-foreground leading-tight">FRANCIS AMOAKO</h1>
-            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">VENTURES POS</p>
+            <h1 className="text-base font-black tracking-tight text-foreground leading-tight">ANNA POS</h1>
+            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">BEVERAGE &amp; WATER DEPOT</p>
           </div>
         </div>
 

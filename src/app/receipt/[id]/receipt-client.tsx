@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 export default function ReceiptClient({ sale, settings = {} }: { sale: any; settings?: Record<string, string> }) {
   const isQuotation = sale.status === 'QUOTATION';
-  const businessName = settings.business_name || 'FRANCIS AMOAKO VENTURES';
+  const businessName = settings.business_name || 'ANNA POS';
   const currency = settings.currency || 'GH₵';
 
   const handlePrint = () => {

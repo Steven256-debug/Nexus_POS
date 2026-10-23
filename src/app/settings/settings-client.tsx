@@ -11,7 +11,7 @@ import { AlertOctagon } from 'lucide-react';
 
 export default function SettingsClient({ initialLocation, initialSettings = {} }: { initialLocation: any; initialSettings?: Record<string, string> }) {
   const [formData, setFormData] = useState({
-    name: initialLocation?.name || 'Francis Amoako Ventures',
+    name: initialLocation?.name || 'Anna POS',
     code: initialLocation?.code || 'BL0001',
     address: initialLocation?.address || 'Kumasi Central Market, Ghana'
   });

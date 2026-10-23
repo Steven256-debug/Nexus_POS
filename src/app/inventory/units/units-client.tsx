@@ -125,7 +125,7 @@ export default function UnitsClient({ initialUnits }: { initialUnits: any[] }) {
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Unit Full Name *</label>
               <Input
-                placeholder="e.g. Pieces, Sheets, Meters, Bundles"
+                placeholder="e.g. Packs, Cartons, Crates, Bottles, Bags"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
@@ -135,7 +135,7 @@ export default function UnitsClient({ initialUnits }: { initialUnits: any[] }) {
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Short Name / Symbol *</label>
               <Input
-                placeholder="e.g. Pc(s), Sheet, m, Bdl"
+                placeholder="e.g. Pk, Ctn, Crt, Btl, Bag"
                 value={shortName}
                 onChange={e => setShortName(e.target.value)}
                 required

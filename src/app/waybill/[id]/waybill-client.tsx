@@ -47,7 +47,7 @@ export default function WaybillClient({ sale, settings }: WaybillClientProps) {
   const [receivedBy, setReceivedBy] = useState(sale.dispatch.receivedBy || '');
   const [notes, setNotes] = useState(sale.dispatch.notes || '');
 
-  const businessName = settings.business_name || 'FRANCIS AMOAKO VENTURES';
+  const businessName = settings.business_name || 'ANNA POS';
   const currency = settings.currency || 'GH₵';
 
   const handlePrint = () => {
@@ -188,7 +188,7 @@ export default function WaybillClient({ sale, settings }: WaybillClientProps) {
               <div className="text-xs text-zinc-600 mt-3 space-y-0.5">
                 <p>Location: Kumasi Central Market / Greater Kumasi, Ghana</p>
                 <p>Tel: +233 (0) 24 000 0000 / +233 (0) 50 000 0000</p>
-                <p>Email: sales@francisamoako.com</p>
+                <p>Email: sales@annapos.com</p>
               </div>
             </div>
 

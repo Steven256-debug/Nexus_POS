@@ -120,7 +120,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Category Name *</label>
               <Input
-                placeholder="e.g. Aluzinc Sheets, Anti-Rust Sheets"
+                placeholder="e.g. Mineral Water, Soft Drinks, Juices"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
