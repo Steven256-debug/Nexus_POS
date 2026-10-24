@@ -13,6 +13,7 @@ const inter = Inter({ subsets: ["latin"], variable: '--font-sans' });
 export const metadata: Metadata = {
   title: "Anna POS - Beverage & Water Retail System",
   description: "Enterprise Point of Sale and Inventory Management System",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

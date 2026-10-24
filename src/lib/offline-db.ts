@@ -10,11 +10,16 @@ export interface OfflineProduct {
   id: string;
   name: string;
   sku: string;
+  barcode?: string | null;
   pricePerUnit: number;
+  costPrice?: number;
   stockQuantity: number;
   minStockAlert: number;
-  category?: string | null;
-  unit?: string | null;
+  category?: { id?: string; name: string } | string | null;
+  brand?: { id?: string; name: string } | string | null;
+  unit?: { id?: string; name?: string; shortName: string } | string | null;
+  imageUrl?: string | null;
+  isFeatured?: boolean;
 }
 
 export interface OfflineSaleInput {
@@ -34,7 +39,9 @@ export interface OfflineSale {
   idempotencyKey: string;
   saleInput: OfflineSaleInput;
   createdAt: string;
-  synced: number; // 0 = false, 1 = true
+  synced: number; // 0 = false, 1 = true, -1 = failed
+  syncError?: string;
+  retryCount?: number;
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -65,21 +72,39 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 // ─── Product Operations ──────────────────────────────────────────
-export async function saveLocalProducts(products: OfflineProduct[]): Promise<void> {
+export async function saveLocalProducts(products: (OfflineProduct | any)[]): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction('products', 'readwrite');
     const store = tx.objectStore('products');
 
     products.forEach(p => {
+      const cat = typeof p.category === 'object' && p.category 
+        ? { id: p.category.id || '', name: p.category.name || '' } 
+        : (typeof p.category === 'string' ? { id: '', name: p.category } : null);
+
+      const br = typeof p.brand === 'object' && p.brand 
+        ? { id: p.brand.id || '', name: p.brand.name || '' } 
+        : (typeof p.brand === 'string' ? { id: '', name: p.brand } : null);
+
+      const un = typeof p.unit === 'object' && p.unit 
+        ? { id: p.unit.id || '', name: p.unit.name || '', shortName: p.unit.shortName || p.unit.name || '' } 
+        : (typeof p.unit === 'string' ? { id: '', name: p.unit, shortName: p.unit } : null);
+
       store.put({
         id: p.id,
         name: p.name,
         sku: p.sku,
-        pricePerUnit: p.pricePerUnit,
-        stockQuantity: p.stockQuantity,
-        minStockAlert: p.minStockAlert,
-        category: (p.category as unknown as { name?: string })?.name ?? (typeof p.category === 'string' ? p.category : undefined),
+        barcode: p.barcode ?? null,
+        pricePerUnit: Number(p.pricePerUnit),
+        costPrice: p.costPrice ? Number(p.costPrice) : 0,
+        stockQuantity: p.stockQuantity ?? 0,
+        minStockAlert: p.minStockAlert ?? 0,
+        category: cat,
+        brand: br,
+        unit: un,
+        imageUrl: p.imageUrl ?? null,
+        isFeatured: Boolean(p.isFeatured),
       });
     });
 
@@ -173,4 +198,13 @@ export async function markSaleFailed(id: string, error: string): Promise<void> {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
+}
+
+export async function getPendingSalesCount(): Promise<number> {
+  try {
+    const sales = await getPendingSales();
+    return sales.length;
+  } catch {
+    return 0;
+  }
 }

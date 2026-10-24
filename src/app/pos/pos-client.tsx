@@ -2,27 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  Search, 
-  ShoppingCart, 
-  Trash2, 
   Plus, 
-  Minus, 
-  CreditCard, 
-  Banknote, 
-  Smartphone, 
   X, 
   PauseCircle, 
   ArrowLeft,
-  Tag,
-  Star,
-  Layers,
-  Percent
+  Wifi,
+  WifiOff,
+  CloudUpload,
+  RefreshCw
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import {} from '@/components/auto-size-text';
 import { processSale } from '@/app/actions/sales';
 import { useRouter } from 'next/navigation';
 import { AddProductModal } from './add-product-modal';
@@ -30,7 +19,14 @@ import { CartPanel } from './cart-panel';
 import { SplitPaymentDialog } from './split-payment-dialog';
 import { ProductCatalog } from './product-catalog';
 import { toast } from 'sonner';
-import { saveLocalProducts, addPendingSale, getLocalProducts } from '@/lib/offline-db';
+import { 
+  saveLocalProducts, 
+  addPendingSale, 
+  getLocalProducts, 
+  getPendingSalesCount,
+  type OfflineSaleInput 
+} from '@/lib/offline-db';
+import { syncOfflineSales, isNetworkError } from '@/lib/offline-sync';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import type { CartItem, ProductWithRelations, PosClientProps } from '@/types';
 
@@ -43,6 +39,8 @@ export default function PosClient({
   const router = useRouter();
   const [products, setProducts] = useState<ProductWithRelations[]>(initialProducts);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [pendingCount, setPendingCount] = useState<number>(0);
   const [cart, setCart] = useState<CartItem[]>(initialResumedCart);
   const [discountPercent, setDiscountPercent] = useState<number>(0);
 
@@ -98,6 +96,24 @@ export default function PosClient({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      getPendingSalesCount().then(setPendingCount);
+
+      const handleOnline = () => {
+        setIsOnline(true);
+        getPendingSalesCount().then(setPendingCount);
+      };
+      const handleOffline = () => {
+        setIsOnline(false);
+      };
+      const handleSynced = () => {
+        getPendingSalesCount().then(setPendingCount);
+      };
+
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      window.addEventListener('offline-sales-synced', handleSynced);
+
       // Cache products to local IndexedDB
       if (initialProducts && initialProducts.length > 0) {
         saveLocalProducts(initialProducts as any);
@@ -109,6 +125,12 @@ export default function PosClient({
           }
         });
       }
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('offline-sales-synced', handleSynced);
+      };
     }
   }, [initialProducts]);
 
@@ -157,40 +179,49 @@ export default function PosClient({
     }
   }, [cart, resumedSaleId, discountAmount, tax, router]);
 
+  // Save sale locally when offline or during network drop
+  const queueOfflineSale = useCallback(async (saleInput: OfflineSaleInput, customMsg?: string) => {
+    const offlineId = crypto.randomUUID();
+    await addPendingSale({
+      id: offlineId,
+      idempotencyKey: `offline-${offlineId}`,
+      saleInput,
+      createdAt: new Date().toISOString(),
+      synced: 0
+    });
+
+    // Update in-memory stock immediately so cashier continues ringing items smoothly
+    setProducts(prev => prev.map(p => {
+      const cartItem = cart.find(c => c.id === p.id);
+      if (cartItem) {
+        return { ...p, stockQuantity: Math.max(0, p.stockQuantity - cartItem.quantity) };
+      }
+      return p;
+    }));
+
+    setCart([]);
+    setIsSplitPayOpen(false);
+    const count = await getPendingSalesCount();
+    setPendingCount(count);
+    toast.warning(customMsg || 'Offline mode: Sale safely queued locally. Will sync automatically when back online!');
+  }, [cart]);
+
   // Cash Checkout (Online or Offline)
   const handleInstantCashCheckout = useCallback(async () => {
     setIsProcessing(true);
 
-    const saleInput = {
-      paymentMethod: 'CASH' as const,
-      status: 'COMPLETED' as const,
+    const saleInput: OfflineSaleInput = {
+      paymentMethod: 'CASH',
+      status: 'COMPLETED',
       items: cart.map(item => ({ productId: item.id, quantity: item.quantity, priceAtSale: item.price })),
       resumedSaleId: resumedSaleId || undefined,
       discountAmount,
       taxAmount: tax,
     };
 
-    if (!navigator.onLine) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
       try {
-        const offlineId = crypto.randomUUID();
-        await addPendingSale({
-          id: offlineId,
-          idempotencyKey: `offline-${offlineId}`,
-          saleInput,
-          createdAt: new Date().toISOString(),
-          synced: 0
-        });
-
-        setProducts(prev => prev.map(p => {
-          const cartItem = cart.find(c => c.id === p.id);
-          if (cartItem) {
-            return { ...p, stockQuantity: Math.max(0, p.stockQuantity - cartItem.quantity) };
-          }
-          return p;
-        }));
-
-        setCart([]);
-        toast.warning('Offline mode: Sale saved locally. Will sync when back online!');
+        await queueOfflineSale(saleInput);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         toast.error('Failed to save offline sale: ' + message);
@@ -201,17 +232,25 @@ export default function PosClient({
     }
 
     try {
-      const sale = await processSale(saleInput);
+      const sale = await processSale(saleInput as any);
       setCart([]);
       toast.success('Sale completed successfully');
       router.push(`/receipt/${sale.id}`);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      toast.error('Checkout failed: ' + message);
+      if (isNetworkError(err)) {
+        try {
+          await queueOfflineSale(saleInput, 'Network dropped: Sale safely saved offline! Will auto-sync when connection restores.');
+        } catch (saveErr) {
+          toast.error('Failed to save offline sale: ' + (saveErr instanceof Error ? saveErr.message : 'Unknown error'));
+        }
+      } else {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        toast.error('Checkout failed: ' + message);
+      }
     } finally {
       setIsProcessing(false);
     }
-  }, [cart, resumedSaleId, discountAmount, tax, router]);
+  }, [cart, resumedSaleId, discountAmount, tax, router, queueOfflineSale]);
 
   // Quotation Checkout
   const handleQuotationCheckout = useCallback(async () => {
@@ -236,7 +275,7 @@ export default function PosClient({
     }
   }, [cart, resumedSaleId, discountAmount, tax, router]);
 
-  // Split Payment Checkout
+  // Split Payment Checkout (Online or Offline)
   const handleSplitCheckout = useCallback(async (cashVal: number, momoVal: number, cardVal: number) => {
     if (cashVal < 0 || momoVal < 0 || cardVal < 0) {
       toast.error('Payment amounts cannot be negative');
@@ -249,33 +288,54 @@ export default function PosClient({
     }
 
     setIsProcessing(true);
+    const payments = [];
+    if (cashVal > 0) payments.push({ method: 'CASH', amount: cashVal });
+    if (momoVal > 0) payments.push({ method: 'MOBILE_MONEY', amount: momoVal });
+    if (cardVal > 0) payments.push({ method: 'CARD', amount: cardVal });
+
+    const saleInput: OfflineSaleInput = {
+      paymentMethod: 'MULTIPLE',
+      status: 'COMPLETED',
+      items: cart.map(item => ({ productId: item.id, quantity: item.quantity, priceAtSale: item.price })),
+      payments,
+      resumedSaleId: resumedSaleId || undefined,
+      discountAmount,
+      taxAmount: tax,
+    };
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      try {
+        await queueOfflineSale(saleInput, 'Offline mode: Split payment saved locally. Will sync when back online!');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        toast.error('Failed to save offline split sale: ' + message);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     try {
-      const payments = [];
-      if (cashVal > 0) payments.push({ method: 'CASH', amount: cashVal });
-      if (momoVal > 0) payments.push({ method: 'MOBILE_MONEY', amount: momoVal });
-      if (cardVal > 0) payments.push({ method: 'CARD', amount: cardVal });
-
-      const sale = await processSale({
-        paymentMethod: 'MULTIPLE',
-        status: 'COMPLETED',
-        items: cart.map(item => ({ productId: item.id, quantity: item.quantity, priceAtSale: item.price })),
-        payments,
-        resumedSaleId: resumedSaleId || undefined,
-        discountAmount,
-        taxAmount: tax,
-      });
-
+      const sale = await processSale(saleInput as any);
       setCart([]);
       setIsSplitPayOpen(false);
       toast.success('Split payment completed');
       router.push(`/receipt/${sale.id}`);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      toast.error('Split payment failed: ' + message);
+      if (isNetworkError(err)) {
+        try {
+          await queueOfflineSale(saleInput, 'Network dropped: Split payment safely saved offline! Will auto-sync.');
+        } catch (saveErr) {
+          toast.error('Failed to save offline split sale: ' + (saveErr instanceof Error ? saveErr.message : 'Unknown error'));
+        }
+      } else {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        toast.error('Split payment failed: ' + message);
+      }
     } finally {
       setIsProcessing(false);
     }
-  }, [cart, resumedSaleId, discountAmount, tax, total, router]);
+  }, [cart, resumedSaleId, discountAmount, tax, total, router, queueOfflineSale]);
 
   // Keyboard Shortcuts — using useCallback handlers avoids stale closures
   useEffect(() => {
@@ -309,10 +369,36 @@ export default function PosClient({
           <Button variant="outline" size="sm" onClick={() => router.push('/')} className="rounded-xl flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Button>
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-600 font-bold text-xs border border-blue-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Cash Register Active
-          </div>
+
+          {/* Online / Offline Status Indicator */}
+          {isOnline ? (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 font-bold text-xs border border-emerald-500/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <Wifi className="w-3.5 h-3.5" />
+              Online Register
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 font-bold text-xs border border-amber-500/20">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <WifiOff className="w-3.5 h-3.5" />
+              Offline Mode Active
+            </div>
+          )}
+
+          {/* Pending Offline Sales Counter & Sync Button */}
+          {pendingCount > 0 && (
+            <button
+              onClick={() => {
+                syncOfflineSales().then(() => getPendingSalesCount().then(setPendingCount));
+              }}
+              title="Click to trigger immediate server sync"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 font-bold text-xs border border-blue-500/20 transition-all cursor-pointer"
+            >
+              <CloudUpload className="w-3.5 h-3.5 animate-bounce" />
+              <span>{pendingCount} Queued</span>
+              <RefreshCw className="w-3 h-3 ml-0.5 opacity-70" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
