@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "type-check": "tsc --noEmit",
     "auto-sync": "node scripts/auto-sync.js",
-    "backup": "node scripts/backup.js"
+    "backup": "node scripts/backup.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
