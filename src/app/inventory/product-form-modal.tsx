@@ -116,9 +116,9 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
         }, metaArray);
       }
       onSaved(saved);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Error saving product');
+      toast.error(err.message || 'Error saving product');
     } finally {
       setIsSaving(false);
     }

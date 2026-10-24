@@ -69,38 +69,105 @@ export async function getProduct(id: string) {
   });
 }
 
+async function resolveCategoryId(categoryId?: string | null, categoryName?: string | null): Promise<string | null> {
+  if (categoryId) {
+    const exists = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (exists) return exists.id;
+  }
+  if (categoryName && categoryName.trim().length > 0) {
+    const trimmed = categoryName.trim();
+    const existing = await prisma.category.findFirst({
+      where: { name: trimmed }
+    });
+    if (existing) return existing.id;
+    const created = await prisma.category.create({
+      data: { name: trimmed }
+    });
+    return created.id;
+  }
+  return null;
+}
+
 export async function createProduct(
   data: z.infer<typeof productInputSchema>,
   metadata: { key: string; value: string }[]
 ) {
-  await requireAdmin();
+  const user = await requireAuth();
 
   // Validate inputs
   const validated = productInputSchema.parse(data);
   const validatedMeta = z.array(metadataItemSchema).parse(metadata || []);
 
-  const result = await prisma.product.create({
-    data: {
-      name: validated.name,
-      sku: validated.sku,
-      barcode: validated.barcode,
-      categoryId: validated.categoryId,
-      brandId: validated.brandId,
-      unitId: validated.unitId,
-      pricePerUnit: validated.pricePerUnit,
-      costPrice: validated.costPrice,
-      stockQuantity: validated.stockQuantity,
-      minStockAlert: validated.minStockAlert,
-      imageUrl: validated.imageUrl,
-      isFeatured: validated.isFeatured,
-      metadata: {
-        create: validatedMeta
+  const cleanSku = validated.sku.trim();
+  const cleanBarcode = validated.barcode?.trim() || null;
+
+  // Check for existing product by SKU
+  const existingSku = await prisma.product.findFirst({
+    where: { sku: cleanSku }
+  });
+  if (existingSku) {
+    if (existingSku.deletedAt !== null) {
+      // Clean up previous soft-deleted product with this SKU so the new one can take it
+      await prisma.product.delete({ where: { id: existingSku.id } }).catch(() => {});
+    } else {
+      throw new Error(`A product with SKU "${cleanSku}" already exists (${existingSku.name}). Please use a different SKU.`);
+    }
+  }
+
+  // Check for existing product by Barcode (if provided)
+  if (cleanBarcode) {
+    const existingBarcode = await prisma.product.findFirst({
+      where: { barcode: cleanBarcode }
+    });
+    if (existingBarcode) {
+      if (existingBarcode.deletedAt !== null) {
+        await prisma.product.delete({ where: { id: existingBarcode.id } }).catch(() => {});
+      } else {
+        throw new Error(`A product with barcode "${cleanBarcode}" already exists (${existingBarcode.name}).`);
       }
     }
-  });
-  revalidatePath('/inventory');
-  revalidatePath('/pos');
-  return result;
+  }
+
+  const categoryId = await resolveCategoryId(validated.categoryId, (data as any).category);
+
+  try {
+    const result = await prisma.product.create({
+      data: {
+        name: validated.name.trim(),
+        sku: cleanSku,
+        barcode: cleanBarcode,
+        categoryId,
+        brandId: validated.brandId || null,
+        unitId: validated.unitId || null,
+        pricePerUnit: validated.pricePerUnit,
+        costPrice: validated.costPrice || 0,
+        stockQuantity: validated.stockQuantity,
+        minStockAlert: validated.minStockAlert,
+        imageUrl: validated.imageUrl || null,
+        isFeatured: validated.isFeatured || false,
+        metadata: {
+          create: validatedMeta
+        }
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      action: 'CREATE_PRODUCT',
+      entity: 'Product',
+      entityId: result.id,
+      details: `Created product ${result.name} (${result.sku})`,
+    });
+
+    revalidatePath('/inventory');
+    revalidatePath('/pos');
+    return result;
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      throw new Error(`Unique constraint conflict: A product with this SKU or Barcode already exists.`);
+    }
+    throw err;
+  }
 }
 
 export async function updateProduct(
@@ -108,53 +175,116 @@ export async function updateProduct(
   data: z.infer<typeof productInputSchema>,
   metadata: { key: string; value: string }[]
 ) {
-  await requireAdmin();
+  const user = await requireAuth();
 
   // Validate inputs
   const validated = productInputSchema.parse(data);
   const validatedMeta = z.array(metadataItemSchema).parse(metadata || []);
 
-  const result = await prisma.product.update({
-    where: { id },
-    data: {
-      name: validated.name,
-      sku: validated.sku,
-      barcode: validated.barcode,
-      categoryId: validated.categoryId,
-      brandId: validated.brandId,
-      unitId: validated.unitId,
-      pricePerUnit: validated.pricePerUnit,
-      costPrice: validated.costPrice,
-      stockQuantity: validated.stockQuantity,
-      minStockAlert: validated.minStockAlert,
-      imageUrl: validated.imageUrl,
-      isFeatured: validated.isFeatured,
-      metadata: {
-        deleteMany: {}, // Atomically clear old metadata
-        create: validatedMeta // Atomically create new metadata
+  const cleanSku = validated.sku.trim();
+  const cleanBarcode = validated.barcode?.trim() || null;
+
+  // Check if SKU is taken by another product
+  const existingSku = await prisma.product.findFirst({
+    where: { sku: cleanSku, id: { not: id } }
+  });
+  if (existingSku) {
+    if (existingSku.deletedAt !== null) {
+      await prisma.product.delete({ where: { id: existingSku.id } }).catch(() => {});
+    } else {
+      throw new Error(`A product with SKU "${cleanSku}" already exists (${existingSku.name}).`);
+    }
+  }
+
+  // Check if Barcode is taken by another product
+  if (cleanBarcode) {
+    const existingBarcode = await prisma.product.findFirst({
+      where: { barcode: cleanBarcode, id: { not: id } }
+    });
+    if (existingBarcode) {
+      if (existingBarcode.deletedAt !== null) {
+        await prisma.product.delete({ where: { id: existingBarcode.id } }).catch(() => {});
+      } else {
+        throw new Error(`A product with barcode "${cleanBarcode}" already exists (${existingBarcode.name}).`);
       }
     }
-  });
-  revalidatePath('/inventory');
-  revalidatePath('/pos');
-  return result;
+  }
+
+  const categoryId = await resolveCategoryId(validated.categoryId, (data as any).category);
+
+  try {
+    const result = await prisma.product.update({
+      where: { id },
+      data: {
+        name: validated.name.trim(),
+        sku: cleanSku,
+        barcode: cleanBarcode,
+        categoryId,
+        brandId: validated.brandId || null,
+        unitId: validated.unitId || null,
+        pricePerUnit: validated.pricePerUnit,
+        costPrice: validated.costPrice || 0,
+        stockQuantity: validated.stockQuantity,
+        minStockAlert: validated.minStockAlert,
+        imageUrl: validated.imageUrl || null,
+        isFeatured: validated.isFeatured || false,
+        metadata: {
+          deleteMany: {}, // Atomically clear old metadata
+          create: validatedMeta // Atomically create new metadata
+        }
+      }
+    });
+
+    await logAction({
+      userId: user.id,
+      action: 'UPDATE_PRODUCT',
+      entity: 'Product',
+      entityId: result.id,
+      details: `Updated product ${result.name} (${result.sku})`,
+    });
+
+    revalidatePath('/inventory');
+    revalidatePath('/pos');
+    return result;
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      throw new Error(`Unique constraint conflict: A product with this SKU or Barcode already exists.`);
+    }
+    throw err;
+  }
 }
 
 export async function deleteProduct(id: string) {
   const admin = await requireAdmin();
 
-  // Soft delete: set deletedAt instead of hard deleting
-  const result = await prisma.product.update({
-    where: { id },
-    data: { deletedAt: new Date() }
+  const salesCount = await prisma.saleItem.count({
+    where: { productId: id }
   });
+
+  let result;
+  if (salesCount === 0) {
+    result = await prisma.product.delete({
+      where: { id }
+    });
+  } else {
+    const now = Date.now();
+    const product = await prisma.product.findUnique({ where: { id } });
+    result = await prisma.product.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        sku: `${product?.sku || 'sku'}_del_${now}`,
+        barcode: product?.barcode ? `${product.barcode}_del_${now}` : null
+      }
+    });
+  }
   
   await logAction({
     userId: admin.id,
     action: 'DELETE_PRODUCT',
     entity: 'Product',
     entityId: id,
-    details: `Soft deleted product ${result.sku}`,
+    details: `Deleted product ${result.name} (${result.sku})`,
   });
   
   revalidatePath('/inventory');
