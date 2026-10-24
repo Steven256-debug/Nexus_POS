@@ -99,21 +99,31 @@ export default function ProductFormModal({ isOpen, onClose, product, onSaved }: 
       const metaArray = Object.entries(metadata).map(([key, value]) => ({ key, value }));
       let saved;
       if (product) {
-        saved = await updateProduct(product.id, {
+        const res = await updateProduct(product.id, {
           ...formData,
           pricePerUnit: Number(formData.pricePerUnit),
           stockQuantity: Number(formData.stockQuantity),
           minStockAlert: Number(formData.minStockAlert),
           imageUrl: finalImageUrl
         }, metaArray);
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+        saved = res.data;
       } else {
-        saved = await createProduct({
+        const res = await createProduct({
           ...formData,
           pricePerUnit: Number(formData.pricePerUnit),
           stockQuantity: Number(formData.stockQuantity),
           minStockAlert: Number(formData.minStockAlert),
           imageUrl: finalImageUrl
         }, metaArray);
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+        saved = res.data;
       }
       onSaved(saved);
     } catch (err: any) {

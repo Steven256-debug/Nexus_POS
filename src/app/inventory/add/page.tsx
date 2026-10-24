@@ -45,26 +45,46 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !sku || !sellingPrice || !stockQuantity) return;
+    if (!name || !sku || !sellingPrice || !stockQuantity) {
+      toast.error('Please fill in all required fields (Name, SKU, Price, Stock)');
+      return;
+    }
+
+    const parsedPrice = parseFloat(sellingPrice);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      toast.error('Selling price must be greater than 0');
+      return;
+    }
+
+    const parsedStock = parseInt(stockQuantity);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      toast.error('Stock quantity cannot be negative');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await createProduct({
+      const res = await createProduct({
         name,
         sku,
         barcode: barcode || null,
         category,
-        pricePerUnit: parseFloat(sellingPrice),
-        costPrice: parseFloat(costPrice || '0'),
-        stockQuantity: parseInt(stockQuantity),
-        minStockAlert: parseInt(minStockAlert || '10'),
+        pricePerUnit: parsedPrice,
+        costPrice: parseFloat(costPrice || '0') || 0,
+        stockQuantity: parsedStock,
+        minStockAlert: parseInt(minStockAlert || '10') || 5,
         imageUrl: null,
       }, []);
+
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
 
       toast.success('Product created successfully');
       router.push('/inventory');
     } catch (err: any) {
-      toast.error('Failed to create product: ' + err.message);
+      toast.error('Failed to create product: ' + (err.message || 'Server error'));
     } finally {
       setIsSubmitting(false);
     }

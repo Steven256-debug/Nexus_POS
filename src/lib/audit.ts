@@ -14,9 +14,18 @@ export async function logAction({
   details?: string | null;
 }) {
   try {
+    let validUserId: string | null = null;
+    if (userId) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true }
+      });
+      if (userExists) validUserId = userExists.id;
+    }
+
     await prisma.auditLog.create({
       data: {
-        userId,
+        userId: validUserId,
         action,
         entity,
         entityId,

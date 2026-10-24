@@ -29,7 +29,7 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
 
     setIsSubmitting(true);
     try {
-      await createProduct({
+      const res = await createProduct({
         name,
         sku,
         category,
@@ -39,6 +39,11 @@ export function AddProductModal({ isOpen, onClose, onProductAdded }: ModalProps)
         minStockAlert: 10,
         imageUrl: null,
       }, []);
+
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
 
       onProductAdded();
       onClose();
