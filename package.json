@@ -12,6 +12,7 @@
     "type-check": "tsc --noEmit",
     "auto-sync": "node scripts/auto-sync.js",
     "backup": "node scripts/backup.js",
+    "reset-password": "node scripts/reset-password.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {
