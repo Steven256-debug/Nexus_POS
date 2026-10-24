@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCheck, Search, Plus } from 'lucide-react';
+import { UserCheck, Search, Plus, Phone, Mail, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -49,29 +49,30 @@ export default function CustomersClient({ initialCustomers, groups }: { initialC
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Customer Directory</h1>
-          <p className="text-muted-foreground text-sm">Manage contractor profiles and customer credit accounts.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Customer Directory</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Manage contractor profiles and customer credit accounts.</p>
         </div>
 
-        <Button onClick={() => setIsAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2">
+        <Button onClick={() => setIsAddOpen(true)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" /> Add New Customer
         </Button>
       </div>
 
-      <div className="relative max-w-md">
+      <div className="relative max-w-md w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search customer by name or phone..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="pl-9 h-11 rounded-xl bg-card border-border shadow-sm"
+          className="pl-9 h-11 rounded-xl bg-card border-border shadow-sm text-sm"
         />
       </div>
 
       <div className="bg-card text-card-foreground rounded-3xl border border-border shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/60 text-muted-foreground font-bold uppercase text-xs border-b border-border">
               <tr>
@@ -106,6 +107,53 @@ export default function CustomersClient({ initialCustomers, groups }: { initialC
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="block sm:hidden divide-y divide-border">
+          {filtered.map(c => (
+            <div key={c.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-bold text-foreground text-sm leading-tight">{c.name}</span>
+                <span className="shrink-0 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-bold text-[11px]">
+                  {c.group?.name || 'Retail'} {c.group?.discount ? `(${c.group.discount}% Off)` : ''}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-muted-foreground">
+                {c.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>{c.phone}</span>
+                  </div>
+                )}
+                {c.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">{c.email}</span>
+                  </div>
+                )}
+                {!c.phone && !c.email && (
+                  <span className="text-muted-foreground italic">No contact details registered</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <Wallet className="w-3.5 h-3.5 text-emerald-600" /> Credit Limit:
+                </span>
+                <span className="font-black text-emerald-600 text-sm">
+                  GH₵{Number(c.creditLimit).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground text-sm">
+              No customers found.
+            </div>
+          )}
         </div>
       </div>
 

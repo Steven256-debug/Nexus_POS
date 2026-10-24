@@ -210,7 +210,75 @@ export default function InventoryClient({
         </div>
       </div>
 
-      <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
+      {/* Mobile Product Card List */}
+      <div className="block sm:hidden space-y-3">
+        {filteredProducts.map((product) => {
+          const isLowStock = product.stockQuantity <= product.minStockAlert;
+          return (
+            <div key={product.id} className="p-4 bg-card rounded-2xl border border-border shadow-xs space-y-3">
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
+                    {product.sku}
+                  </span>
+                  <h3 className="font-bold text-sm text-foreground mt-1 leading-snug">
+                    {product.name}
+                  </h3>
+                  <span className="inline-block mt-1 text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
+                    {getCatName(product)}
+                  </span>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-black text-base text-blue-600">
+                    GH₵{Number(product.pricePerUnit).toFixed(2)}
+                  </p>
+                  <div className="mt-1">
+                    {isLowStock ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-500/10 px-2 py-0.5 rounded-md">
+                        <AlertCircle className="w-3 h-3" /> Low ({product.stockQuantity})
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                        {product.stockQuantity} in stock
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {userRole === 'ADMIN' && (
+                <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 text-xs font-bold rounded-xl"
+                    onClick={() => { setEditingProduct(product); setIsModalOpen(true); }}
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1 text-blue-600" /> Edit
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs font-bold rounded-xl text-red-600 hover:bg-red-500/10"
+                    onClick={() => handleDelete(product.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {filteredProducts.length === 0 && (
+          <div className="p-8 text-center bg-card rounded-2xl border border-border text-muted-foreground text-sm">
+            No products found matching your filters.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto pb-4 sm:pb-0">
           <Table className="min-w-[800px]">
             <TableHeader className="bg-muted/50/80 backdrop-blur-sm">

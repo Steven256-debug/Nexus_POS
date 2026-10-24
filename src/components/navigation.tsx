@@ -25,12 +25,15 @@ import {
   Building,
   Shield,
   History,
-  Truck
+  Truck,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
 import {} from './theme-toggle';
 import type { LucideIcon } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface NavGroup {
   label: string;
@@ -42,13 +45,26 @@ interface NavGroup {
 export function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Keep track of expanded dropdown sections
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Contacts: true,
     Products: true,
     Sell: true,
+    Admin: true,
   });
+
+  useEffect(() => {
+    const handleToggle = () => setIsMobileDrawerOpen(prev => !prev);
+    window.addEventListener('toggle-mobile-menu', handleToggle);
+    return () => window.removeEventListener('toggle-mobile-menu', handleToggle);
+  }, []);
+
+  // Close drawer on page route navigation
+  useEffect(() => {
+    setIsMobileDrawerOpen(false);
+  }, [pathname]);
 
   if (pathname === '/login' || pathname?.startsWith('/receipt') || pathname?.startsWith('/waybill')) return null;
   if (!session) return null;
@@ -236,15 +252,154 @@ export function Navigation() {
         </div>
       </nav>
 
+      {/* Mobile Slide-Over Drawer */}
+      {isMobileDrawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setIsMobileDrawerOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" 
+          />
+
+          {/* Drawer Container */}
+          <div className="relative w-[85%] max-w-sm bg-card text-card-foreground border-r border-border h-full flex flex-col p-5 shadow-2xl z-10 overflow-y-auto animate-in slide-in-from-left duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md">
+                  AP
+                </div>
+                <div>
+                  <h2 className="text-base font-black leading-tight">ANNA POS</h2>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">BEVERAGE DEPOT</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="p-2 rounded-xl text-muted-foreground hover:bg-muted"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Profile Card */}
+            <div className="my-4 p-3 rounded-2xl bg-muted/50 border border-border flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-600 font-bold flex items-center justify-center text-sm shrink-0">
+                {session.user?.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground truncate">{session.user?.name || session.user?.email}</p>
+                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 font-bold text-[10px]">
+                  {role}
+                </span>
+              </div>
+            </div>
+
+            {/* Navigation Links Accordion */}
+            <div className="flex-1 space-y-1 py-2 overflow-y-auto">
+              {navGroups.map(group => {
+                const Icon = group.icon;
+                const hasSub = group.subItems && group.subItems.length > 0;
+                const isOpen = openSections[group.label];
+                const isDirectActive = group.href && pathname && (pathname === group.href || (pathname.startsWith(group.href) && group.href !== '/'));
+                const isSubActive = hasSub && group.subItems?.some(s => pathname === s.href);
+
+                if (!hasSub && group.href) {
+                  return (
+                    <Link
+                      key={group.label}
+                      href={group.href}
+                      onClick={() => setIsMobileDrawerOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all text-sm font-semibold",
+                        isDirectActive
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 font-bold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      )}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span>{group.label}</span>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={group.label} className="space-y-1">
+                    <button
+                      onClick={() => toggleSection(group.label)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all text-sm font-semibold",
+                        isSubActive
+                          ? "bg-blue-500/10 text-blue-600 font-bold border border-blue-500/20"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5 shrink-0" />
+                        <span>{group.label}</span>
+                      </div>
+                      {isOpen ? (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
+
+                    {isOpen && (
+                      <div className="pl-6 space-y-1 border-l-2 border-border/60 ml-5 py-1">
+                        {group.subItems?.map(sub => {
+                          const isSubItemActive = pathname === sub.href;
+                          const SubIcon = sub.icon;
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setIsMobileDrawerOpen(false)}
+                              className={cn(
+                                "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                                isSubItemActive
+                                  ? "bg-blue-600 text-white font-bold shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              )}
+                            >
+                              {SubIcon && <SubIcon className="w-4 h-4 shrink-0" />}
+                              <span>{sub.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="pt-4 border-t border-border mt-auto">
+              <button
+                onClick={() => {
+                  setIsMobileDrawerOpen(false);
+                  signOut({ callbackUrl: '/login' });
+                }}
+                className="w-full flex items-center justify-center gap-2 p-3 text-xs font-bold text-red-600 hover:bg-red-500/10 rounded-xl transition-colors border border-red-500/20"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Tab Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-white/30 dark:bg-zinc-950/40 backdrop-blur-xl text-card-foreground border-t border-border/50 z-50 hide-on-print pb-safe">
-        <ul className="flex items-center justify-around p-2">
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-card/90 dark:bg-zinc-950/90 backdrop-blur-xl text-card-foreground border-t border-border/70 z-40 hide-on-print pb-safe">
+        <ul className="flex items-center justify-around px-1 py-1.5">
           {[
             { href: '/', label: 'Home', icon: LayoutDashboard },
             { href: '/pos', label: 'POS', icon: ShoppingCart },
             { href: '/inventory', label: 'Products', icon: Package },
             { href: '/sales', label: 'Sales', icon: FileText },
-            { href: '/expenses', label: 'Expenses', icon: Receipt },
           ].map(link => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -253,16 +408,30 @@ export function Navigation() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex flex-col items-center justify-center p-2 rounded-xl transition-all",
+                    "flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all",
                     isActive ? "text-blue-600 font-bold" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <Icon className="w-5 h-5 mb-0.5" />
-                  <span className="text-[10px] font-medium">{link.label}</span>
+                  <span className="text-[10px] font-medium leading-none">{link.label}</span>
                 </Link>
               </li>
             );
           })}
+
+          {/* More / Full Menu Trigger */}
+          <li className="flex-1">
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className={cn(
+                "w-full flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all",
+                isMobileDrawerOpen ? "text-blue-600 font-bold" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Menu className="w-5 h-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">Menu</span>
+            </button>
+          </li>
         </ul>
       </nav>
     </>

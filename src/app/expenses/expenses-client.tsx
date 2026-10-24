@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { DollarSign, Plus, TrendingDown, Receipt, Search } from 'lucide-react';
+import { DollarSign, Plus, TrendingDown, Receipt, Search, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -58,60 +58,62 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: a
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Operational Expenses</h1>
-          <p className="text-muted-foreground text-sm">Track business expenditures, supplies, utilities, and branch maintenance.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Operational Expenses</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Track business expenditures, supplies, utilities, and branch maintenance.</p>
         </div>
 
-        <Button onClick={() => setIsAddOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-blue-500/10">
+        <Button onClick={() => setIsAddOpen(true)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10">
           <Plus className="w-4 h-4" /> Record New Expense
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 bg-card text-card-foreground rounded-3xl border border-border shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="p-4 sm:p-6 bg-card text-card-foreground rounded-3xl border border-border shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-red-500/10 text-red-600 rounded-2xl">
+            <div className="p-3 bg-red-500/10 text-red-600 rounded-2xl shrink-0">
               <TrendingDown className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Expenses</p>
-              <p className="text-2xl font-black text-foreground">GH₵{totalExpense.toFixed(2)}</p>
+              <p className="text-xl sm:text-2xl font-black text-foreground">GH₵{totalExpense.toFixed(2)}</p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 bg-card text-card-foreground rounded-3xl border border-border shadow-sm">
+        <div className="p-4 sm:p-6 bg-card text-card-foreground rounded-3xl border border-border shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 text-blue-600 rounded-2xl">
+            <div className="p-3 bg-blue-500/10 text-blue-600 rounded-2xl shrink-0">
               <Receipt className="w-6 h-6" />
             </div>
             <div>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Entries</p>
-              <p className="text-2xl font-black text-foreground">{filtered.length} logs</p>
+              <p className="text-xl sm:text-2xl font-black text-foreground">{filtered.length} logs</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="relative max-w-md">
+      <div className="relative max-w-md w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search expenses by category or description..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="pl-9 h-11 rounded-xl bg-card border-border shadow-sm"
+          className="pl-9 h-11 rounded-xl bg-card border-border shadow-sm text-sm"
         />
       </div>
 
       {/* Expenses Table */}
       <div className="bg-card text-card-foreground rounded-3xl border border-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-border bg-muted/30">
-          <h3 className="text-lg font-bold">Expense Log History</h3>
+        <div className="p-4 sm:p-6 border-b border-border bg-muted/30">
+          <h3 className="text-base sm:text-lg font-bold">Expense Log History</h3>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/60 text-muted-foreground font-bold uppercase text-xs border-b border-border">
               <tr>
@@ -139,6 +141,42 @@ export default function ExpensesClient({ initialExpenses }: { initialExpenses: a
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="block sm:hidden divide-y divide-border">
+          {filtered.map(e => (
+            <div key={e.id} className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 text-[11px] font-bold">
+                  {e.category}
+                </span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {new Date(e.date).toLocaleDateString()}
+                </span>
+              </div>
+
+              {e.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {e.description}
+                </p>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-muted-foreground">Expense:</span>
+                <span className="text-base font-black text-red-600">
+                  GH₵{e.amount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-muted-foreground text-sm">
+              No expenses recorded.
+            </div>
+          )}
         </div>
       </div>
 

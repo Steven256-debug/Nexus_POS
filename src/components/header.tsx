@@ -8,7 +8,8 @@ import {
   Bell, 
   Building2, 
   ShoppingCart, 
-  User as DollarSign
+  User as DollarSign,
+  Menu
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -136,8 +137,18 @@ export function TopHeader() {
   return (
     <>
       <header className="h-16 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between gap-4 shadow-sm">
-        {/* Left: Location Switcher & Search */}
-        <div className="flex items-center gap-4 flex-1 max-w-xl">
+        {/* Left: Mobile Menu Button & Search */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-xl min-w-0">
+          {/* Mobile Menu Hamburger Trigger */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('toggle-mobile-menu'))}
+            className="lg:hidden p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors shrink-0"
+            aria-label="Open Navigation Menu"
+            title="Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold text-xs border border-blue-500/20 whitespace-nowrap">
             <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>POS Terminal</span>
@@ -149,17 +160,17 @@ export function TopHeader() {
           >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <div className="flex items-center pl-9 pr-2 h-10 rounded-xl bg-muted/50 border border-border text-sm font-medium text-muted-foreground hover:bg-muted/80 transition-colors overflow-hidden">
-              <span className="truncate flex-1 text-left">Search menu or scan...</span>
+              <span className="truncate flex-1 text-left text-xs sm:text-sm">Search menu or scan...</span>
               <span className="ml-2 text-[10px] bg-background border border-border px-1.5 py-0.5 rounded-md hidden sm:block shrink-0 shadow-sm font-semibold">Ctrl K</span>
             </div>
           </div>
         </div>
 
         {/* Right: Quick Tools Toolbar */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* Direct POS Link */}
           <Link href="/pos">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-2 px-3 sm:px-4">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 flex items-center gap-1.5 px-2.5 sm:px-4 h-9">
               <ShoppingCart className="w-4 h-4" />
               <span className="hidden sm:inline">POS Terminal</span>
             </Button>
@@ -171,13 +182,13 @@ export function TopHeader() {
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors relative"
             title="Add Quick Expense"
           >
-            <DollarSign className="w-5 h-5" />
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Calculator Shortcut */}
           <button
             onClick={() => setIsCalculatorOpen(true)}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+            className="hidden sm:flex p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
             title="Calculator"
           >
             <Calculator className="w-5 h-5" />

@@ -45,26 +45,26 @@ export default async function ReportsPage() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-8 animate-in fade-in max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in max-w-7xl mx-auto pb-12">
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-foreground">Business & Sales Reports</h1>
-        <p className="text-muted-foreground text-lg">Financial year analytics, profit & loss summary, and top products.</p>
+        <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-foreground">Business & Sales Reports</h1>
+        <p className="text-muted-foreground text-xs sm:text-lg">Financial year analytics, profit & loss summary, and top products.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="p-4 sm:p-6 bg-card rounded-3xl border border-border shadow-sm">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Gross Sales Revenue</p>
-          <p className="text-3xl font-black text-blue-600">GH₵{totalRevenue.toFixed(2)}</p>
+          <p className="text-2xl sm:text-3xl font-black text-blue-600">GH₵{totalRevenue.toFixed(2)}</p>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-sm">
+        <div className="p-4 sm:p-6 bg-card rounded-3xl border border-border shadow-sm">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Operating Expenses</p>
-          <p className="text-3xl font-black text-red-600">GH₵{totalExpenses.toFixed(2)}</p>
+          <p className="text-2xl sm:text-3xl font-black text-red-600">GH₵{totalExpenses.toFixed(2)}</p>
         </div>
 
-        <div className="p-6 bg-card rounded-3xl border border-border shadow-sm">
+        <div className="p-4 sm:p-6 bg-card rounded-3xl border border-border shadow-sm sm:col-span-2 md:col-span-1">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Estimated Net Profit</p>
-          <p className="text-3xl font-black text-emerald-600">GH₵{netProfit.toFixed(2)}</p>
+          <p className="text-2xl sm:text-3xl font-black text-emerald-600">GH₵{netProfit.toFixed(2)}</p>
         </div>
       </div>
 

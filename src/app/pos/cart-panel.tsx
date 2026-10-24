@@ -19,6 +19,7 @@ export function CartPanel({
   onCashCheckout,
   onQuotationCheckout,
   onSplitPayOpen,
+  onBackToCatalog,
 }: {
   cart: CartItem[];
   updateQuantity: (id: string, delta: number) => void;
@@ -34,16 +35,29 @@ export function CartPanel({
   onCashCheckout: () => void;
   onQuotationCheckout: () => void;
   onSplitPayOpen: () => void;
+  onBackToCatalog?: () => void;
 }) {
   return (
-    <div className="w-full lg:w-[440px] flex flex-col bg-card text-card-foreground rounded-3xl border border-border shadow-sm overflow-hidden">
+    <div className="w-full flex flex-col bg-card text-card-foreground rounded-3xl border border-border shadow-sm overflow-hidden">
       {/* Cart Header */}
-      <div className="p-5 border-b border-border bg-muted/40 flex justify-between items-center">
+      <div className="p-4 sm:p-5 border-b border-border bg-muted/40 flex justify-between items-center gap-2">
         <div className="flex items-center gap-2.5">
+          {onBackToCatalog && (
+            <button
+              onClick={onBackToCatalog}
+              className="lg:hidden p-2 rounded-xl bg-card border border-border text-foreground font-bold text-xs flex items-center gap-1 hover:bg-muted shadow-sm"
+              title="Back to Product Catalog"
+            >
+              &larr;
+            </button>
+          )}
           <div className="p-2 bg-blue-600/10 text-blue-600 rounded-xl">
             <ShoppingCart className="w-5 h-5" />
           </div>
-          <h2 className="text-lg font-black text-foreground">Current Sale</h2>
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-foreground leading-none">Current Sale</h2>
+            <span className="text-[10px] text-muted-foreground font-semibold lg:hidden">Review and Checkout</span>
+          </div>
         </div>
         <Badge variant="secondary" className="font-bold text-xs bg-blue-500/10 text-blue-600">
           {cart.reduce((a, c) => a + c.quantity, 0)} Items
