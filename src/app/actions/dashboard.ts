@@ -23,79 +23,81 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const startDate = thirtyDaysAgo;
   const endDate = new Date();
 
-  // 1. Today's Revenue & Completed Sales Count (DB Aggregation)
-  const todaySalesAgg = await prisma.sale.aggregate({
-    _sum: { totalAmount: true },
-    _count: { id: true },
-    where: {
-      status: 'COMPLETED',
-      createdAt: { gte: startOfToday }
-    }
-  });
-  
-  // 2. Yesterday's Revenue for Real Growth %
-  const yesterdaySalesAgg = await prisma.sale.aggregate({
-    _sum: { totalAmount: true },
-    where: {
-      status: 'COMPLETED',
-      createdAt: { gte: startOfYesterday, lt: startOfToday }
-    }
-  });
-  
-  // 3. Total Products Count
-  const totalProducts = await prisma.product.count({
-    where: { deletedAt: null }
-  });
-  
-  // 4. Low Stock Items
-  const lowStockProducts = await prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      stockQuantity: { lte: prisma.product.fields.minStockAlert }
-    },
-    include: { category: true, brand: true, unit: true, metadata: true },
-    take: 10
-  });
-  
-  // 5. 30-Day Sales Trend (SQLite / Standard SQL)
-  let dailyAgg: { day: string | Date; revenue: number; cogs: number }[] = [];
-  try {
-    dailyAgg = await prisma.$queryRaw<{ day: string | Date; revenue: number; cogs: number }[]>`
+  // Parallelize all 7 independent queries in a single concurrent batch
+  const [
+    todaySalesAgg,
+    yesterdaySalesAgg,
+    totalProducts,
+    lowStockProducts,
+    dailyAgg,
+    categoryGroups,
+    recentSales,
+  ] = await Promise.all([
+    // 1. Today's Revenue & Completed Sales Count (DB Aggregation)
+    prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      _count: { id: true },
+      where: {
+        status: 'COMPLETED',
+        createdAt: { gte: startOfToday }
+      }
+    }),
+    // 2. Yesterday's Revenue for Real Growth %
+    prisma.sale.aggregate({
+      _sum: { totalAmount: true },
+      where: {
+        status: 'COMPLETED',
+        createdAt: { gte: startOfYesterday, lt: startOfToday }
+      }
+    }),
+    // 3. Total Products Count
+    prisma.product.count({
+      where: { deletedAt: null }
+    }),
+    // 4. Low Stock Items
+    prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        stockQuantity: { lte: prisma.product.fields.minStockAlert }
+      },
+      include: { category: true, brand: true, unit: true, metadata: true },
+      take: 10
+    }),
+    // 5. 30-Day Sales Trend (PostgreSQL)
+    prisma.$queryRaw<{ day: string | Date; revenue: number; cogs: number }[]>`
       SELECT
-        strftime('%Y-%m-%d', datetime("sales"."createdAt" / 1000, 'unixepoch')) as day,
-        COALESCE(SUM("sales"."total_amount"), 0) as revenue,
-        COALESCE(SUM("sale_items"."cost_at_sale" * "sale_items"."quantity"), 0) as cogs
+        TO_CHAR("sales"."createdAt", 'YYYY-MM-DD') as day,
+        COALESCE(SUM("sales"."total_amount"), 0)::FLOAT as revenue,
+        COALESCE(SUM("sale_items"."cost_at_sale" * "sale_items"."quantity"), 0)::FLOAT as cogs
       FROM "sales"
       LEFT JOIN "sale_items" ON "sale_items"."sale_id_fk" = "sales"."id"
       WHERE "sales"."status" = 'COMPLETED'
         AND "sales"."createdAt" >= ${startDate}
         AND "sales"."createdAt" <= ${endDate}
-      GROUP BY day
+      GROUP BY TO_CHAR("sales"."createdAt", 'YYYY-MM-DD')
       ORDER BY day ASC
-    `;
-  } catch (err) {
-    console.warn('Dashboard trend fallback:', err);
-    dailyAgg = [];
-  }
-  
-  // 6. Category Distribution
-  const categoryGroups = await prisma.product.groupBy({
-    by: ['categoryId'],
-    _count: { id: true },
-    where: { deletedAt: null },
-  });
-  
-  // 7. Recent Sales for Activity Feed
-  const recentSales = await prisma.sale.findMany({
-    where: { status: 'COMPLETED' },
-    include: {
-      cashier: true,
-      customer: true,
-      items: { include: { product: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
+    `.catch(err => {
+      console.warn('Dashboard trend fallback:', err);
+      return [] as { day: string | Date; revenue: number; cogs: number }[];
+    }),
+    // 6. Category Distribution
+    prisma.product.groupBy({
+      by: ['categoryId'],
+      _count: { id: true },
+      where: { deletedAt: null },
+    }),
+    // 7. Recent Sales for Activity Feed
+    prisma.sale.findMany({
+      where: { status: 'COMPLETED' },
+      include: {
+        cashier: true,
+        customer: true,
+        items: { include: { product: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }),
+  ]);
 
   const todayRevenue = Number(todaySalesAgg._sum.totalAmount ?? 0);
   const yesterdayRevenue = Number(yesterdaySalesAgg._sum.totalAmount ?? 0);

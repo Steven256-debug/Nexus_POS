@@ -7,9 +7,11 @@ import { authOptions } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 
 export default async function InventoryPage() {
-  const products = await getProducts();
-  const categories = await getCategories();
-  const session = await getServerSession(authOptions);
+  const [products, categories, session] = await Promise.all([
+    getProducts(),
+    getCategories(),
+    getServerSession(authOptions),
+  ]);
   const role = (session?.user as any)?.role || 'EMPLOYEE';
   
   return (

@@ -4,11 +4,13 @@ import { BarChart3, Award } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  const sales = await prisma.sale.findMany({
-    where: { status: 'COMPLETED' },
-    include: { items: { include: { product: true } } }
-  });
-  const expenses = await prisma.expense.findMany();
+  const [sales, expenses] = await Promise.all([
+    prisma.sale.findMany({
+      where: { status: 'COMPLETED' },
+      include: { items: { include: { product: true } } }
+    }),
+    prisma.expense.findMany(),
+  ]);
 
   const totalRevenue = sales.reduce((acc, s) => acc + Number(s.totalAmount), 0);
   const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0);

@@ -11,8 +11,10 @@ interface PageProps {
 }
 
 export default async function PosPage({ searchParams }: PageProps) {
-  const products = await getProducts();
-  const taxRateStr = await getSetting('tax_rate');
+  const [products, taxRateStr] = await Promise.all([
+    getProducts(),
+    getSetting('tax_rate'),
+  ]);
   
   const { resume } = await searchParams;
   const taxRate = taxRateStr ? parseFloat(taxRateStr) / 100 : 0.15;

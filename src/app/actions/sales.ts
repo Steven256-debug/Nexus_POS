@@ -72,6 +72,7 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
     }[] = [];
 
     if (status === 'COMPLETED') {
+      // Validate all stock levels first
       for (const item of validated.items) {
         const product = productMap.get(item.productId);
         if (!product) {
@@ -80,12 +81,6 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
         if (product.stockQuantity < item.quantity) {
           throw new Error(`Insufficient stock for product ${product.name} (available: ${product.stockQuantity}, requested: ${item.quantity})`);
         }
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stockQuantity: product.stockQuantity - item.quantity
-          }
-        });
         itemsWithCost.push({
           productId: item.productId,
           quantity: item.quantity,
@@ -93,6 +88,19 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
           costAtSale: Number(product.costPrice),
         });
       }
+
+      // Concurrently update stock in parallel
+      await Promise.all(
+        validated.items.map(item => {
+          const product = productMap.get(item.productId)!;
+          return tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stockQuantity: product.stockQuantity - item.quantity,
+            },
+          });
+        })
+      );
     } else {
       // For drafts/quotations, still capture cost price for later
       for (const item of validated.items) {
@@ -156,15 +164,15 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
     timeout: 30000, // 30 seconds for the transaction to complete
   });
 
-  // Audit log for completed sales
+  // Audit log for completed sales (non-blocking for instant response)
   if (status === 'COMPLETED') {
-    await logAction({
+    logAction({
       userId: cashierId,
       action: 'COMPLETE_SALE',
       entity: 'Sale',
       entityId: sale.id,
       details: `Completed sale ${sale.invoiceNo} for ${totalAmount.toFixed(2)}`,
-    });
+    }).catch(err => console.error('Audit log error:', err));
   }
 
   revalidatePath('/inventory');
