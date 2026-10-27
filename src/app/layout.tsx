@@ -11,7 +11,7 @@ import { OfflineSyncProvider } from "@/components/offline-sync-provider";
 const inter = Inter({ subsets: ["latin"], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: "Anna POS - Beverage & Water Retail System",
+  title: "BB'S Enterprise - Point of Sale System",
   description: "Enterprise Point of Sale and Inventory Management System",
   manifest: "/manifest.json",
 };

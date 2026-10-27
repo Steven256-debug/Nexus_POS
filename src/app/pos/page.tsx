@@ -17,7 +17,7 @@ export default async function PosPage({ searchParams }: PageProps) {
   ]);
   
   const { resume } = await searchParams;
-  const taxRate = taxRateStr ? parseFloat(taxRateStr) / 100 : 0.15;
+  const taxRate = taxRateStr ? parseFloat(taxRateStr) / 100 : 0;
   
   let resumedSaleId: string | null = null;
   let initialCart: CartItem[] = [];

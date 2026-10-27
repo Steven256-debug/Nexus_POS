@@ -147,11 +147,11 @@ export function Navigation() {
       <nav className="hidden lg:flex fixed top-0 left-0 h-screen w-20 hover:w-64 transition-[width] duration-300 ease-in-out group bg-transparent dark:bg-transparent backdrop-blur-2xl text-card-foreground border-r border-border/30 p-4 z-50 flex-col hide-on-print overflow-x-hidden overflow-y-auto">
         <div className="mb-6 p-2 flex items-center justify-start gap-4">
           <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
-            AP
+            BB
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            <h1 className="text-base font-black tracking-tight text-foreground leading-tight">ANNA POS</h1>
-            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">BEVERAGE &amp; WATER DEPOT</p>
+            <h1 className="text-base font-black tracking-tight text-foreground leading-tight">BB&apos;S Enterprise</h1>
+            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">POINT OF SALE</p>
           </div>
         </div>
 
@@ -267,11 +267,11 @@ export function Navigation() {
             <div className="flex items-center justify-between pb-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md">
-                  AP
+                  BB
                 </div>
                 <div>
-                  <h2 className="text-base font-black leading-tight">ANNA POS</h2>
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">BEVERAGE DEPOT</p>
+                  <h2 className="text-base font-black leading-tight">BB&apos;S Enterprise</h2>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">POINT OF SALE</p>
                 </div>
               </div>
               <button 

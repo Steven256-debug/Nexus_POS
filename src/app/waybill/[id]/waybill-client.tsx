@@ -47,7 +47,7 @@ export default function WaybillClient({ sale, settings }: WaybillClientProps) {
   const [receivedBy, setReceivedBy] = useState(sale.dispatch.receivedBy || '');
   const [notes, setNotes] = useState(sale.dispatch.notes || '');
 
-  const businessName = settings.business_name || 'ANNA POS';
+  const businessName = settings.business_name || "BB'S Enterprise";
   const currency = settings.currency || 'GH₵';
 
   const handlePrint = () => {

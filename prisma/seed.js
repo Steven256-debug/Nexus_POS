@@ -54,9 +54,9 @@ async function main() {
   // 3. Create Business Location
   await prisma.businessLocation.create({
     data: {
-      name: 'AMOAKO DRINKS & WATER DEPOT (BL0001)',
+      name: "BB'S Enterprise (BL0001)",
       code: 'BL0001',
-      address: 'Kumasi Central Market, Ghana',
+      address: 'Antoakrom Market,Kumasi, Ghana',
     },
   });
 
@@ -350,10 +350,10 @@ async function main() {
   // 10. Default Settings
   await prisma.setting.createMany({
     data: [
-      { key: 'tax_rate', value: '15' },
+      { key: 'tax_rate', value: '0' },
       { key: 'currency', value: 'GH₵' },
       { key: 'invoice_prefix', value: 'INV' },
-      { key: 'business_name', value: 'AMOAKO DRINKS & WATER DEPOT' },
+      { key: 'business_name', value: "BB'S Enterprise" },
       { key: 'printer_width', value: '80mm' },
     ],
   });

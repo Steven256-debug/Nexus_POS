@@ -37,7 +37,7 @@ export default function PosClient({
   initialProducts,
   initialResumedCart = [],
   resumedSaleId = null,
-  taxRate = 0.15
+  taxRate = 0
 }: PosClientProps) {
   const router = useRouter();
   const [products, setProducts] = useState<ProductWithRelations[]>(initialProducts);

@@ -223,7 +223,7 @@ describe('expenseInputSchema', () => {
 describe('businessLocationSchema', () => {
   test('accepts valid location', () => {
     const result = businessLocationSchema.safeParse({
-      name: 'Anna POS',
+      name: "BB'S Enterprise",
       code: 'BL0001',
     });
     expect(result.success).toBe(true);
