@@ -186,6 +186,10 @@ export async function getSales(options?: {
   skip?: number;
   cursor?: string;
   status?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  date?: string; // YYYY-MM-DD
+  cashierId?: string;
 }) {
   const user = await requireAuth();
 
@@ -196,10 +200,30 @@ export async function getSales(options?: {
   // Employees can only see their own sales
   if (user.role === 'EMPLOYEE') {
     where.cashierId = user.id;
+  } else if (options?.cashierId) {
+    where.cashierId = options.cashierId;
+  }
+
+  if (options?.date) {
+    const [year, month, day] = options.date.split('-').map(Number);
+    const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+    where.createdAt = {
+      gte: start,
+      lte: end,
+    };
+  } else if (options?.startDate || options?.endDate) {
+    where.createdAt = {};
+    if (options.startDate) {
+      where.createdAt.gte = new Date(options.startDate);
+    }
+    if (options.endDate) {
+      where.createdAt.lte = new Date(options.endDate);
+    }
   }
 
   return await prisma.sale.findMany({
-    take: options?.take ?? 50,
+    take: options?.take ?? 200,
     skip: options?.skip,
     ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
     where,
@@ -210,12 +234,80 @@ export async function getSales(options?: {
         }
       },
       cashier: true,
-      customer: true
+      customer: true,
+      payments: true
     },
     orderBy: {
       createdAt: 'desc'
     }
   });
+}
+
+export async function getDailyRevenueReport(targetDate?: string) {
+  const user = await requireAuth();
+  
+  let start: Date;
+  let end: Date;
+  
+  if (targetDate) {
+    const [year, month, day] = targetDate.split('-').map(Number);
+    start = new Date(year, month - 1, day, 0, 0, 0, 0);
+    end = new Date(year, month - 1, day, 23, 59, 59, 999);
+  } else {
+    start = new Date();
+    start.setHours(0, 0, 0, 0);
+    end = new Date();
+    end.setHours(23, 59, 59, 999);
+  }
+
+  const where: Prisma.SaleWhereInput = {
+    status: 'COMPLETED',
+    createdAt: {
+      gte: start,
+      lte: end,
+    }
+  };
+
+  if (user.role === 'EMPLOYEE') {
+    where.cashierId = user.id;
+  }
+
+  const sales = await prisma.sale.findMany({
+    where,
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      },
+      payments: true,
+      cashier: true,
+      customer: true,
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+
+  const totalRevenue = sales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+  const totalSalesCount = sales.length;
+  const totalItemsSold = sales.reduce((sum, s) => sum + s.items.reduce((iSum, item) => iSum + item.quantity, 0), 0);
+  
+  const paymentBreakdown: Record<string, number> = {};
+  sales.forEach(s => {
+    const method = s.paymentMethod || 'CASH';
+    paymentBreakdown[method] = (paymentBreakdown[method] || 0) + Number(s.totalAmount);
+  });
+
+  return {
+    date: targetDate || start.toISOString().split('T')[0],
+    totalRevenue,
+    totalSalesCount,
+    totalItemsSold,
+    averageSaleValue: totalSalesCount > 0 ? totalRevenue / totalSalesCount : 0,
+    paymentBreakdown,
+    sales,
+  };
 }
 
 export async function getSale(id: string) {
