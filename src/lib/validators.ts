@@ -26,9 +26,14 @@ export const metadataItemSchema = z.object({
 
 // ─── Sale Validation ──────────────────────────────────────────
 export const saleItemSchema = z.object({
-  productId: z.string().min(1, 'Product ID is required'),
+  productId: z.string().optional().nullable(),
+  customName: z.string().optional().nullable(),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   priceAtSale: z.number().positive('Price must be greater than 0'),
+  costAtSale: z.number().min(0).optional(),
+}).refine(data => data.productId || (data.customName && data.customName.trim().length > 0), {
+  message: 'Either Product ID or Custom Item Name must be provided',
+  path: ['productId'],
 });
 
 export const paymentSchema = z.object({
@@ -46,6 +51,10 @@ export const saleInputSchema = z.object({
   resumedSaleId: z.string().optional(),
   discountAmount: z.number().min(0).default(0),
   taxAmount: z.number().min(0).default(0),
+  saleDate: z.string().optional().nullable(),
+  deductStock: z.boolean().default(true).optional(),
+  allowNegativeStock: z.boolean().default(false).optional(),
+  bookReference: z.string().optional().nullable(),
 });
 
 export type SaleInput = z.infer<typeof saleInputSchema>;

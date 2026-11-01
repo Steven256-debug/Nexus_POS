@@ -56,8 +56,43 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
     }
     const invoiceNo = `INV-${year}-${String(nextNum).padStart(4, '0')}`;
 
-    // Batch-fetch all products at once to avoid N+1 queries
-    const productIds = validated.items.map(item => item.productId);
+    // Resolve all products (handling any custom uncataloged items on the fly)
+    const resolvedItems: {
+      productId: string;
+      quantity: number;
+      priceAtSale: number;
+      costAtSale?: number;
+    }[] = [];
+
+    for (const item of validated.items) {
+      if (item.productId) {
+        resolvedItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          priceAtSale: item.priceAtSale,
+          costAtSale: item.costAtSale,
+        });
+      } else if (item.customName) {
+        const customSku = `BOOK-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+        const newProduct = await tx.product.create({
+          data: {
+            name: item.customName.trim(),
+            sku: customSku,
+            pricePerUnit: item.priceAtSale,
+            costPrice: item.costAtSale ?? 0,
+            stockQuantity: 0,
+          }
+        });
+        resolvedItems.push({
+          productId: newProduct.id,
+          quantity: item.quantity,
+          priceAtSale: item.priceAtSale,
+          costAtSale: item.costAtSale ?? 0,
+        });
+      }
+    }
+
+    const productIds = resolvedItems.map(item => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } }
     });
@@ -71,39 +106,43 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
       costAtSale: number;
     }[] = [];
 
+    const shouldDeductStock = status === 'COMPLETED' && validated.deductStock !== false;
+
     if (status === 'COMPLETED') {
       // Validate all stock levels first
-      for (const item of validated.items) {
+      for (const item of resolvedItems) {
         const product = productMap.get(item.productId);
         if (!product) {
           throw new Error(`Product not found: ${item.productId}`);
         }
-        if (product.stockQuantity < item.quantity) {
+        if (shouldDeductStock && product.stockQuantity < item.quantity && !validated.allowNegativeStock) {
           throw new Error(`Insufficient stock for product ${product.name} (available: ${product.stockQuantity}, requested: ${item.quantity})`);
         }
         itemsWithCost.push({
           productId: item.productId,
           quantity: item.quantity,
           priceAtSale: item.priceAtSale,
-          costAtSale: Number(product.costPrice),
+          costAtSale: item.costAtSale !== undefined ? item.costAtSale : Number(product.costPrice),
         });
       }
 
-      // Concurrently update stock in parallel
-      await Promise.all(
-        validated.items.map(item => {
-          const product = productMap.get(item.productId)!;
-          return tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stockQuantity: product.stockQuantity - item.quantity,
-            },
-          });
-        })
-      );
+      // Concurrently update stock in parallel if deduction is enabled
+      if (shouldDeductStock) {
+        await Promise.all(
+          resolvedItems.map(item => {
+            const product = productMap.get(item.productId)!;
+            return tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stockQuantity: product.stockQuantity - item.quantity,
+              },
+            });
+          })
+        );
+      }
     } else {
       // For drafts/quotations, still capture cost price for later
-      for (const item of validated.items) {
+      for (const item of resolvedItems) {
         const product = productMap.get(item.productId);
         itemsWithCost.push({
           productId: item.productId,
@@ -121,6 +160,13 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
     const netAmount = totalAmount - validated.discountAmount + validated.taxAmount;
     const changeAmount = Math.max(0, paidAmount - netAmount);
 
+    let finalNote = validated.note || null;
+    if (validated.bookReference) {
+      finalNote = `[Book Ref: ${validated.bookReference.trim()}]${validated.note ? ' ' + validated.note.trim() : ''}`;
+    }
+
+    const saleCreatedAt = validated.saleDate ? new Date(validated.saleDate) : undefined;
+
     // Create Sale record
     return await tx.sale.create({
       data: {
@@ -134,7 +180,8 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
         taxAmount: validated.taxAmount,
         paidAmount,
         changeAmount,
-        note: validated.note || null,
+        note: finalNote,
+        createdAt: saleCreatedAt,
         items: {
           create: itemsWithCost.map(item => ({
             productId: item.productId,
@@ -166,19 +213,58 @@ export async function processSale(data: z.infer<typeof saleInputSchema>) {
 
   // Audit log for completed sales (non-blocking for instant response)
   if (status === 'COMPLETED') {
+    const isBookEntry = Boolean(validated.bookReference || validated.saleDate);
+    const actionName = isBookEntry ? 'RECORD_BOOK_SALE' : 'COMPLETE_SALE';
     logAction({
       userId: cashierId,
-      action: 'COMPLETE_SALE',
+      action: actionName,
       entity: 'Sale',
       entityId: sale.id,
-      details: `Completed sale ${sale.invoiceNo} for ${totalAmount.toFixed(2)}`,
+      details: `${isBookEntry ? `Recorded book sale (${validated.bookReference || 'Manual Entry'})` : 'Completed sale'} ${sale.invoiceNo} for ${totalAmount.toFixed(2)}${validated.saleDate ? ` on ${new Date(validated.saleDate).toLocaleDateString()}` : ''}`,
     }).catch(err => console.error('Audit log error:', err));
   }
 
   revalidatePath('/inventory');
   revalidatePath('/pos');
   revalidatePath('/sales');
+  revalidatePath('/reports');
   return sale;
+}
+
+export async function recordBookSale(data: z.infer<typeof saleInputSchema>) {
+  return await processSale({
+    ...data,
+    status: 'COMPLETED',
+  });
+}
+
+export async function getRecentBookSales(limit = 10) {
+  const user = await requireAuth();
+  const where: Prisma.SaleWhereInput = {
+    status: 'COMPLETED',
+    note: { contains: '[Book Ref:' }
+  };
+  if (user.role === 'EMPLOYEE') {
+    where.cashierId = user.id;
+  }
+
+  return await prisma.sale.findMany({
+    where,
+    take: limit,
+    include: {
+      items: {
+        include: {
+          product: true
+        }
+      },
+      cashier: true,
+      customer: true,
+      payments: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
 }
 
 export async function getSales(options?: {

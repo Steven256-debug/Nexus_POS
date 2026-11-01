@@ -26,6 +26,7 @@ import {
   Shield,
   History,
   Truck,
+  BookOpen,
   Menu,
   X
 } from 'lucide-react';
@@ -106,6 +107,7 @@ export function Navigation() {
       subItems: [
         { label: 'All Sales', href: '/sales', icon: FileText },
         { label: 'Point of Sale (POS)', href: '/pos', icon: ShoppingCart },
+        { label: 'Record Book Sale', href: '/sales/book-entry', icon: BookOpen },
         { label: 'List POS Sales', href: '/sales/pos-list', icon: Clock },
         { label: 'Draft Sales', href: '/sales/drafts', icon: FileText },
         { label: 'Quotations', href: '/sales/quotations', icon: FileSpreadsheet },

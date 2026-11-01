@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   CalendarDays,
   Wallet,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +62,7 @@ interface Sale {
   taxAmount?: number;
   paidAmount?: number;
   changeAmount?: number;
+  note?: string | null;
   createdAt: string | Date;
   items: SaleItem[];
   payments?: {
@@ -101,6 +103,7 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentFilter, setPaymentFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [sourceFilter, setSourceFilter] = useState<'ALL' | 'LIVE' | 'BOOK'>('ALL');
 
   // Compute unique dates where sales were made with count and revenue summary
   const datesWithSales = useMemo(() => {
@@ -150,6 +153,7 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
     setSearchQuery('');
     setPaymentFilter('ALL');
     setStatusFilter('ALL');
+    setSourceFilter('ALL');
   };
 
   // Filter sales based on selected date, preset, search and payment
@@ -209,9 +213,16 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
         if (!matches) return false;
       }
 
+      // 5. Entry Source Filtering (Live POS vs Book Sales)
+      if (sourceFilter === 'BOOK') {
+        if (!sale.note?.includes('[Book Ref:')) return false;
+      } else if (sourceFilter === 'LIVE') {
+        if (sale.note?.includes('[Book Ref:')) return false;
+      }
+
       return true;
     });
-  }, [sales, selectedDate, datePreset, statusFilter, paymentFilter, searchQuery]);
+  }, [sales, selectedDate, datePreset, statusFilter, paymentFilter, searchQuery, sourceFilter]);
 
   // Aggregate Metrics for the Filtered / Selected Date
   const metrics = useMemo(() => {
@@ -254,7 +265,14 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
     return 'All Time';
   }, [selectedDate, datePreset]);
 
-  const hasActiveFilters = Boolean(selectedDate || datePreset !== 'all' || searchQuery || paymentFilter !== 'ALL' || statusFilter !== 'ALL');
+  const hasActiveFilters = Boolean(
+    selectedDate || 
+    datePreset !== 'all' || 
+    searchQuery || 
+    paymentFilter !== 'ALL' || 
+    statusFilter !== 'ALL' ||
+    sourceFilter !== 'ALL'
+  );
 
   return (
     <div className="p-2 sm:p-4 md:p-8 space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto">
@@ -274,14 +292,21 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
           </p>
         </div>
 
-        {/* Quick Print / Reset Actions */}
-        <div className="flex items-center gap-2 self-start md:self-auto">
+        {/* Quick Action Buttons */}
+        <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+          <Link
+            href="/sales/book-entry"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 transition-all active:scale-95"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            + Record Book Sale
+          </Link>
           {hasActiveFilters && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleClearFilters}
-              className="gap-1.5 text-xs rounded-xl border-dashed hover:bg-muted"
+              className="gap-1.5 text-xs rounded-xl border-dashed hover:bg-muted h-9"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset Filters
@@ -291,7 +316,7 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
             variant="outline" 
             size="sm" 
             onClick={() => window.print()}
-            className="gap-1.5 text-xs rounded-xl bg-card hover:bg-muted shadow-sm"
+            className="gap-1.5 text-xs rounded-xl bg-card hover:bg-muted shadow-sm h-9"
           >
             <Printer className="w-3.5 h-3.5" />
             Print Report
@@ -367,10 +392,10 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
           
           {/* "Dates with Sales" Dropdown Selector */}
-          <div className="lg:col-span-5 space-y-1">
+          <div className="lg:col-span-4 space-y-1">
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Select Date With Recorded Sales ({datesWithSales.length} available):
+              Sales Date ({datesWithSales.length} found):
             </label>
             <div className="relative">
               <select
@@ -394,7 +419,7 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
           </div>
 
           {/* Search Input */}
-          <div className="lg:col-span-4 space-y-1">
+          <div className="lg:col-span-3 space-y-1">
             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-blue-500" />
               Search Transactions:
@@ -402,7 +427,7 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Search invoice #, cashier, customer, product..."
+                placeholder="Search invoice, cashier, product..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-background text-xs pl-8 h-9 rounded-xl"
@@ -420,13 +445,30 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
             <select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
-              className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 h-9"
+              className="w-full bg-background border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 h-9"
             >
               <option value="ALL">All Payment Methods</option>
               <option value="CASH">Cash</option>
               <option value="MOMO">Mobile Money</option>
               <option value="CARD">Bank Card</option>
               <option value="SPLIT">Split Payment</option>
+            </select>
+          </div>
+
+          {/* Entry Type Filter */}
+          <div className="lg:col-span-2 space-y-1">
+            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+              Entry Source:
+            </label>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as any)}
+              className="w-full bg-background border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-blue-600 h-9"
+            >
+              <option value="ALL">All Sources</option>
+              <option value="LIVE">Live POS Only</option>
+              <option value="BOOK">Book Entry Only</option>
             </select>
           </div>
         </div>
@@ -624,6 +666,14 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
                         <Receipt className="w-3.5 h-3.5 text-blue-600" />
                         <span>{displayId}</span>
                       </div>
+                      {sale.note?.includes('[Book Ref:') && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[10px] font-bold">
+                            <BookOpen className="w-2.5 h-2.5" />
+                            {sale.note.match(/\[Book Ref:\s*([^\]]+)\]/)?.[1] || 'Book Sale'}
+                          </span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       <p className="font-semibold text-xs text-foreground">
@@ -715,11 +765,17 @@ export function SalesClient({ initialSales, userRole = 'EMPLOYEE' }: SalesClient
             return (
               <div key={sale.id} className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Receipt className="w-4 h-4 text-blue-600" />
                     <span className="font-mono text-xs font-bold text-foreground">
                       #{displayId}
                     </span>
+                    {sale.note?.includes('[Book Ref:') && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[9px] font-bold">
+                        <BookOpen className="w-2.5 h-2.5" />
+                        {sale.note.match(/\[Book Ref:\s*([^\]]+)\]/)?.[1] || 'Book'}
+                      </span>
+                    )}
                   </div>
                   <Badge variant="secondary" className="text-xs uppercase font-semibold">
                     {sale.paymentMethod}

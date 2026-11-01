@@ -107,4 +107,34 @@ describe('Date Filtering & Revenue Calculations', () => {
     expect(map.get(toLocalDateString(sampleSales[2].createdAt))).toBe(1);
     expect(map.get(toLocalDateString(sampleSales[3].createdAt))).toBe(1);
   });
+
+  test('correctly identifies and filters book sales by source', () => {
+    const mixedSales = [
+      ...sampleSales,
+      {
+        id: 'sale-5',
+        invoiceNo: 'INV-2026-0005',
+        totalAmount: 220.00,
+        paymentMethod: 'CASH',
+        status: 'COMPLETED',
+        note: '[Book Ref: Notebook Page 12, Row 4] Sold in book',
+        createdAt: new Date('2026-10-31T11:00:00Z'),
+        items: [{ quantity: 1, priceAtSale: 220.00, costAtSale: 150.00 }]
+      }
+    ];
+
+    const bookSales = mixedSales.filter(s => s.note?.includes('[Book Ref:'));
+    expect(bookSales.length).toBe(1);
+    expect(bookSales[0].invoiceNo).toBe('INV-2026-0005');
+    expect(bookSales[0].note).toContain('Notebook Page 12');
+
+    const liveSales = mixedSales.filter(s => !s.note?.includes('[Book Ref:'));
+    expect(liveSales.length).toBe(4);
+
+    // When calculating revenue for 2026-10-31, the backdated book sale is included
+    const targetDate = toLocalDateString(new Date('2026-10-31T12:00:00Z'));
+    const dailyWithBook = calculateDailyRevenue(mixedSales, targetDate);
+    expect(dailyWithBook.salesCount).toBe(3);
+    expect(dailyWithBook.totalRevenue).toBe(470.50 + 220.00);
+  });
 });
